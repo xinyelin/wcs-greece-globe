@@ -178,9 +178,32 @@
   .artwork .medium{
     font-size:10px;letter-spacing:0.32em;text-transform:uppercase;color:var(--gold);
   }
-  .panel-index{
+  #panel-detail,#panel-list{display:flex;flex-direction:column;gap:14px;}
+  .panel-eyebrow{
     font-size:10px;letter-spacing:0.32em;text-transform:uppercase;color:var(--gold);margin-top:4px;
   }
+  .panel-back{
+    align-self:flex-start;background:none;border:none;cursor:pointer;
+    font-family:inherit;font-size:10.5px;letter-spacing:0.22em;text-transform:uppercase;
+    color:var(--mist);padding:2px 0;transition:color .2s;
+  }
+  .panel-back:hover,.panel-back:focus-visible{color:var(--gold);}
+  .list-rows{display:flex;flex-direction:column;margin-top:6px;}
+  .list-row{
+    background:none;border:none;border-top:1px solid rgba(212,180,131,0.12);
+    cursor:pointer;text-align:left;font-family:inherit;
+    padding:15px 4px;display:flex;flex-direction:column;gap:3px;
+    transition:background .2s;
+  }
+  .list-row:last-child{border-bottom:1px solid rgba(212,180,131,0.12);}
+  .list-row:hover,.list-row:focus-visible{background:rgba(212,180,131,0.07);}
+  .list-row .lr-name{
+    font-family:'Fraunces',Georgia,serif;font-weight:300;font-size:19px;color:var(--marble);
+  }
+  .list-row .lr-title{
+    font-family:'Fraunces',Georgia,serif;font-style:italic;font-size:13px;color:var(--mist);
+  }
+  .list-row .lr-loc{font-size:10.5px;letter-spacing:0.08em;color:var(--mist);opacity:0.75;}
   .panel-name{
     font-family:'Fraunces',Georgia,serif;font-weight:300;font-size:32px;line-height:1.1;color:var(--marble);
   }
@@ -337,19 +360,30 @@
 
   <aside id="artist-panel" aria-label="Artist detail">
     <button class="panel-close" id="panel-close" aria-label="Close">✕</button>
-    <div class="artwork">
-      <div class="title" id="panel-title"></div>
-      <div class="medium" id="panel-medium"></div>
+
+    <div id="panel-list" hidden>
+      <div class="panel-eyebrow">A Gathering of Lights</div>
+      <div class="panel-name" id="list-city"></div>
+      <div class="panel-country" id="list-count"></div>
+      <div class="list-rows" id="list-rows"></div>
     </div>
-    <div class="panel-index" id="panel-index"></div>
-    <div class="panel-name" id="panel-name"></div>
-    <div class="panel-country" id="panel-country"></div>
-    <div class="panel-links" id="panel-links"></div>
-    <button class="vote-btn" id="panel-vote">♡ Vote for this artist</button>
-    <div class="panel-section-label">Artist</div>
-    <div class="panel-bio" id="panel-bio"></div>
-    <div class="panel-section-label" id="panel-statement-label">On the Greek Spirit</div>
-    <div class="panel-bio" id="panel-statement"></div>
+
+    <div id="panel-detail">
+      <button class="panel-back" id="panel-back" hidden>← Back to this gathering</button>
+      <div class="artwork">
+        <div class="title" id="panel-title"></div>
+        <div class="medium" id="panel-medium"></div>
+      </div>
+      <div class="panel-eyebrow" id="panel-continent"></div>
+      <div class="panel-name" id="panel-name"></div>
+      <div class="panel-country" id="panel-country"></div>
+      <div class="panel-links" id="panel-links"></div>
+      <button class="vote-btn" id="panel-vote">♡ Vote for this artist</button>
+      <div class="panel-section-label">Artist</div>
+      <div class="panel-bio" id="panel-bio"></div>
+      <div class="panel-section-label" id="panel-statement-label">On the Greek Spirit</div>
+      <div class="panel-bio" id="panel-statement"></div>
+    </div>
   </aside>
 
   <div id="fallback">
@@ -439,7 +473,7 @@ function showFallback() {
   const grid = document.getElementById("fb-grid");
   grid.innerHTML = ARTISTS.map(a => `
     <div class="fb-card">
-      <div class="idx">Artist ${String(a.index).padStart(3, "0")} · ${esc(a.continent)}</div>
+      <div class="idx">${esc(a.continent)}</div>
       <div class="nm">${esc(a.name)}</div>
       <div class="loc">${esc(a.location)}</div>
       <div class="ttl">${esc(a.title || "Untitled")}</div>
@@ -767,7 +801,47 @@ function clearActive() {
   activeMarker = null;
 }
 
-function openPanel(artist, sprite) {
+const listWrap = document.getElementById("panel-list");
+const detailWrap = document.getElementById("panel-detail");
+const backBtn = document.getElementById("panel-back");
+let currentGathering = null;
+
+function openListPanel(items) {
+  currentGathering = items;
+  clearActive();
+
+  const locs = new Set(items.map(a => a.location));
+  document.getElementById("list-city").textContent =
+    locs.size === 1 ? items[0].location : items[0].location + " & nearby";
+  document.getElementById("list-count").textContent =
+    items.length + " artists shine here — choose one to meet";
+  const rows = document.getElementById("list-rows");
+  rows.innerHTML = items.map(a => `
+    <button class="list-row" data-i="${a.index}">
+      <span class="lr-name">${esc(a.name)}</span>
+      <span class="lr-title">${esc(a.title || "Untitled")}</span>
+      <span class="lr-loc">${esc(a.location)}</span>
+    </button>`).join("");
+  rows.querySelectorAll(".list-row").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const artist = ARTISTS.find(x => x.index === Number(btn.dataset.i));
+      const sprite = markers.find(m => m.userData.index === artist.index);
+      openPanel(artist, sprite, true);
+    });
+  });
+
+  detailWrap.hidden = true;
+  listWrap.hidden = false;
+  panel.scrollTop = 0;
+  panel.classList.add("open");
+  controls.autoRotate = false;
+}
+
+backBtn.addEventListener("click", () => {
+  if (currentGathering) openListPanel(currentGathering);
+});
+
+function openPanel(artist, sprite, fromGathering) {
   clearActive();
   activeMarker = sprite;
   sprite.scale.set(MARKER_ACTIVE, MARKER_ACTIVE, MARKER_ACTIVE);
@@ -779,9 +853,13 @@ function openPanel(artist, sprite) {
     highlight.visible = true;
   }
 
+  listWrap.hidden = true;
+  detailWrap.hidden = false;
+  backBtn.hidden = !fromGathering;
+
   document.getElementById("panel-title").textContent = artist.title || "Untitled";
   document.getElementById("panel-medium").textContent = artist.medium || "";
-  document.getElementById("panel-index").textContent = `Artist ${String(artist.index).padStart(3,"0")} of ${ARTISTS.length} · ${artist.continent}`;
+  document.getElementById("panel-continent").textContent = artist.continent;
   document.getElementById("panel-name").textContent = artist.name;
   document.getElementById("panel-country").textContent = artist.location;
   document.getElementById("panel-links").innerHTML =
@@ -810,7 +888,21 @@ renderer.domElement.addEventListener("click", (e) => {
   setMouse(e);
   raycaster.setFromCamera(mouse, camera);
   const hits = raycaster.intersectObjects(markers);
-  if (hits.length) openPanel(hits[0].object.userData, hits[0].object);
+  if (!hits.length) return;
+  // gather every light under the cursor on the near side of the globe
+  // (deeper hits are the same cluster; far-side hits are a whole radius away)
+  const nearest = hits[0].distance;
+  const seen = new Set();
+  const cluster = [];
+  hits.forEach(h => {
+    if (h.distance > nearest + 0.45) return;
+    const a = h.object.userData;
+    if (seen.has(a.index)) return;
+    seen.add(a.index);
+    cluster.push(a);
+  });
+  if (cluster.length === 1) openPanel(cluster[0], hits[0].object);
+  else openListPanel(cluster);
 });
 
 renderer.domElement.addEventListener("pointermove", (e) => {
@@ -823,8 +915,14 @@ document.getElementById("panel-close").addEventListener("click", () => {
   panel.classList.remove("open");
   clearActive();
   currentArtist = null;
+  currentGathering = null;
   controls.autoRotate = !REDUCED_MOTION;
 });
+
+// test hook: exposes internals only when ?debug is present
+if (new URLSearchParams(location.search).has("debug")) {
+  window.__wcs = { markers, openPanel, openListPanel, ARTISTS };
+}
 
 window.addEventListener("resize", () => {
   camera.aspect = innerWidth / innerHeight;
