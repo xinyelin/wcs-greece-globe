@@ -10,7 +10,7 @@
       ]
     },
     {
-      "source": "/earth.jpg",
+      "source": "/(earth|earth-gilded).jpg",
       "headers": [
         {
           "key": "Cache-Control",

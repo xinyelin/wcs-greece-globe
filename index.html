@@ -27,12 +27,12 @@
     font-weight:300;
   }
   body.fallback-mode{overflow:auto;height:auto;}
-  /* colour is kept to the far corners so the centre stays black and the globe holds contrast */
+  /* one hue family only — deep aegean, kept to the far corners so the centre stays black */
   body::before{
     content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
     background:
-      radial-gradient(ellipse 46% 38% at 92% 6%, rgba(74,54,142,0.22), transparent 60%),
-      radial-gradient(ellipse 44% 40% at 5% 96%, rgba(20,62,116,0.20), transparent 60%),
+      radial-gradient(ellipse 46% 38% at 92% 6%, rgba(26,54,104,0.20), transparent 60%),
+      radial-gradient(ellipse 44% 40% at 5% 96%, rgba(16,46,84,0.18), transparent 60%),
       var(--void);
   }
   #app{position:relative;width:100vw;height:100vh;z-index:1;}
@@ -130,13 +130,6 @@
     display:block;margin-top:6px;font-size:10px;letter-spacing:0.3em;
     text-transform:uppercase;color:var(--mist);
   }
-  .legend{display:flex;gap:16px;margin-top:22px;flex-wrap:wrap;}
-  .legend div{
-    display:flex;align-items:center;gap:6px;
-    font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--mist);
-  }
-  .legend i{width:7px;height:7px;border-radius:50%;display:inline-block;}
-
   .hint{
     position:absolute;bottom:40px;left:50%;z-index:5;
     font-size:11px;letter-spacing:0.24em;text-transform:uppercase;color:var(--mist);
@@ -262,7 +255,6 @@
     to{opacity:0.8;transform:translateX(-50%) translateY(0);}
   }
   /* the centered hint owns the bottom edge; decorative neighbours yield when space runs out */
-  @media (max-width:1400px){ .legend{display:none;} }
   @media (max-width:1200px){ .mission{display:none;} }
   /* too narrow for the hint to clear the stats sideways, so lift it clear instead */
   @media (min-width:901px) and (max-width:1250px){ .hint{bottom:104px;} }
@@ -297,7 +289,6 @@
     .stats{gap:18px;}
     .stat b{font-size:22px;}
     .stat span{font-size:8px;letter-spacing:0.2em;margin-top:3px;}
-    .legend{display:none;}
     #artist-panel{width:100%;padding:16px 22px 40px;}
     .panel-close{
       font-size:26px;padding:10px 12px;margin-right:-12px;
@@ -339,7 +330,6 @@
       <div class="stat"><b id="stat-locations">—</b><span>Cities</span></div>
       <div class="stat"><b>I</b><span>Chapter</span></div>
     </div>
-    <div class="legend" id="legend"></div>
   </div>
 
   <div class="hint">Drag to orbit · Scroll to zoom · Select a light to meet its artist</div>
@@ -385,29 +375,15 @@ const LAND_W = 240, LAND_H = 120;
 
 const REDUCED_MOTION = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const IS_TOUCH = window.matchMedia("(pointer: coarse)").matches;
-const MARKER_SCALE = IS_TOUCH ? 0.13 : 0.1;
-const MARKER_ACTIVE = IS_TOUCH ? 0.24 : 0.19;
-const USE_TEXTURE = new URLSearchParams(location.search).get("globe") !== "points";
-
-const CONTINENT_COLORS = {
-  "Europe": 0x7fb3d9,
-  "Asia": 0xd4b483,
-  "Africa": 0xd98d5f,
-  "Americas": 0x8fd9b8,
-  "Oceania": 0xb3a1e6,
-  "Nomadic": 0xf5f1e8,
-};
+const MARKER_SCALE = IS_TOUCH ? 0.12 : 0.088;
+const MARKER_ACTIVE = IS_TOUCH ? 0.22 : 0.17;
+const GLOBE_MODE = new URLSearchParams(location.search).get("globe");
+const USE_TEXTURE = GLOBE_MODE !== "points";
+// the graded navy-and-gold earth is the default; ?globe=natural restores the photograph
+const TEXTURE_SRC = GLOBE_MODE === "natural" ? "earth.jpg" : "earth-gilded.jpg";
 
 document.getElementById("stat-artists").textContent = ARTISTS.length;
 document.getElementById("stat-locations").textContent = new Set(ARTISTS.map(a => a.location)).size;
-
-const legend = document.getElementById("legend");
-Object.entries(CONTINENT_COLORS).forEach(([name, c]) => {
-  if (!ARTISTS.some(a => a.continent === name)) return;
-  const d = document.createElement("div");
-  d.innerHTML = `<i style="background:#${c.toString(16).padStart(6,"0")}"></i>${name}`;
-  legend.appendChild(d);
-});
 
 // ---------- voting (shared by globe panel and fallback list) ----------
 const API_BASE = /vercel\.app$|^localhost$|^127\./.test(location.hostname) ? "" : "https://wcs-greece-globe.vercel.app";
@@ -532,11 +508,11 @@ controls.enablePan = false;
 
 // Low cool ambient keeps the night side deep blue rather than dead black, while a
 // strong warm key preserves the terminator that gives the sphere its volume.
-scene.add(new THREE.AmbientLight(0x9db4d4, 0.42));
+scene.add(new THREE.AmbientLight(0xa8bdd8, 0.58));
 const sun = new THREE.DirectionalLight(0xfff3dd, 1.32);
 sun.position.set(5, 2.6, 4.4);
 scene.add(sun);
-const rim = new THREE.DirectionalLight(0x5b8fc4, 0.34);
+const rim = new THREE.DirectionalLight(0x5b8fc4, 0.46);
 rim.position.set(-5, -1.5, -3.5);
 scene.add(rim);
 
@@ -576,9 +552,9 @@ scene.add(globe);
 if (USE_TEXTURE) {
   // The texture carries its own colour; tinting it only drains the photograph.
   const mat = new THREE.MeshPhongMaterial({
-    color: 0x1e3550, specular: 0x0d141d, shininess: 9,
+    color: 0x1e3550, specular: 0x141a24, shininess: 14,
   });
-  new THREE.TextureLoader().load("earth.jpg", (tex) => {
+  new THREE.TextureLoader().load(TEXTURE_SRC, (tex) => {
     if (renderer.capabilities.getMaxAnisotropy) {
       tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
     }
@@ -673,18 +649,17 @@ let atmosphereMat = null;
 
 // (no backdrop bloom: it hazed the limb the atmosphere shell already draws)
 
-// ---------- markers (materials shared per continent) ----------
-const markerMats = {};
-Object.entries(CONTINENT_COLORS).forEach(([name, c]) => {
-  markerMats[name] = new THREE.SpriteMaterial({
-    map: glowTex, color: c, transparent: true,
-    blending: THREE.AdditiveBlending, depthWrite: false,
-  });
+// ---------- markers ----------
+// One colour for every artist: cool starlight against the gilded land, so the
+// only warm light on the globe is Greek — the beacon, and the threads home.
+const markerMat = new THREE.SpriteMaterial({
+  map: glowTex, color: 0xbfdcff, transparent: true,
+  blending: THREE.AdditiveBlending, depthWrite: false,
 });
 
 const markers = [];
 ARTISTS.forEach((artist) => {
-  const sprite = new THREE.Sprite(markerMats[artist.continent] || markerMats.Nomadic);
+  const sprite = new THREE.Sprite(markerMat);
   sprite.position.copy(latLngToVector3(artist.lat, artist.lng, RADIUS * 1.015));
   sprite.scale.set(MARKER_SCALE, MARKER_SCALE, MARKER_SCALE);
   sprite.userData = artist;
@@ -770,6 +745,7 @@ function starLayer(count, size, opacity, spread) {
 }
 const starsFar = starLayer(700, 0.28, 0.4, 45);
 const starsNear = starLayer(200, 0.5, 0.65, 30);
+starsNear.material.color.set(0xf0e6d0); // near stars lean ivory, tying the sky to the gold
 
 // ---------- interaction ----------
 const raycaster = new THREE.Raycaster();
