@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Voting Results — World Culture Salon</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;1,300&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root{--void:#05070f;--gold:#d4b483;--marble:#f5f1e8;--mist:#93a5bd;--hairline:rgba(212,180,131,0.22);}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--void);color:var(--marble);font-family:'Jost',sans-serif;font-weight:300;min-height:100vh;padding:60px 24px;}
+  .wrap{max-width:680px;margin:0 auto;}
+  .eyebrow{font-size:11px;letter-spacing:0.42em;text-transform:uppercase;color:var(--gold);}
+  h1{font-family:'Fraunces',serif;font-weight:300;font-size:38px;margin-top:10px;}
+  .sub{color:var(--mist);font-size:13px;margin-top:8px;letter-spacing:0.04em;}
+  .keyrow{display:flex;gap:10px;margin-top:32px;}
+  input{
+    flex:1;background:rgba(255,255,255,0.04);border:1px solid var(--hairline);
+    color:var(--marble);padding:12px 16px;font-family:'Jost',sans-serif;font-size:14px;outline:none;
+  }
+  input:focus{border-color:var(--gold);}
+  button{
+    background:var(--gold);border:none;color:#171008;padding:12px 24px;cursor:pointer;
+    font-family:'Jost',sans-serif;font-weight:500;font-size:11px;letter-spacing:0.22em;text-transform:uppercase;
+  }
+  button:hover{background:#e3c795;}
+  .total{margin-top:36px;font-size:13px;color:var(--mist);letter-spacing:0.1em;}
+  .total b{font-family:'Fraunces',serif;font-size:26px;color:var(--marble);font-weight:300;margin-right:8px;}
+  table{width:100%;margin-top:18px;border-collapse:collapse;}
+  th{font-size:10px;letter-spacing:0.3em;text-transform:uppercase;color:var(--mist);text-align:left;padding:10px 8px;border-bottom:1px solid var(--hairline);font-weight:400;}
+  td{padding:11px 8px;border-bottom:1px solid rgba(255,255,255,0.05);font-size:14px;}
+  td.rank{color:var(--gold);font-family:'Fraunces',serif;width:44px;}
+  td.votes{text-align:right;font-family:'Fraunces',serif;font-size:17px;color:var(--gold);}
+  td .loc{display:block;font-size:11.5px;color:var(--mist);margin-top:2px;}
+  .err{margin-top:24px;color:#d98d5f;font-size:13px;letter-spacing:0.05em;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">One Culture Foundation · Organizers Only</div>
+  <h1>Chapter I · Voting Results</h1>
+  <div class="sub">Enter the admin key to view the tally. Counts are never shown to the public.</div>
+  <div class="keyrow">
+    <input id="key" type="password" placeholder="Admin key" autocomplete="off">
+    <button id="load">View results</button>
+  </div>
+  <div id="out"></div>
+</div>
+<script>
+const out = document.getElementById("out");
+async function load() {
+  const key = document.getElementById("key").value.trim();
+  if (!key) return;
+  out.innerHTML = '<div class="err" style="color:var(--mist)">Loading…</div>';
+  try {
+    const [rRes, rArtists] = await Promise.all([
+      fetch("/api/results?key=" + encodeURIComponent(key)),
+      fetch("/artists-min.json"),
+    ]);
+    if (rRes.status === 401) { out.innerHTML = '<div class="err">Wrong key.</div>'; return; }
+    if (!rRes.ok) { out.innerHTML = '<div class="err">Storage not ready yet — connect the Redis database first.</div>'; return; }
+    const { votes, total } = await rRes.json();
+    const artists = await rArtists.json();
+    const byIndex = Object.fromEntries(artists.map(a => [a.index, a]));
+    const ranked = Object.entries(votes)
+      .map(([idx, n]) => ({ ...(byIndex[idx] || { name: "Artist " + idx, location: "", title: "" }), n }))
+      .sort((a, b) => b.n - a.n);
+    let html = `<div class="total"><b>${total}</b>votes cast · ${ranked.length} artists received votes</div>`;
+    html += '<table><tr><th></th><th>Artist</th><th>Artwork</th><th style="text-align:right">Votes</th></tr>';
+    ranked.forEach((a, i) => {
+      html += `<tr><td class="rank">${i + 1}</td><td>${a.name}<span class="loc">${a.location}</span></td><td>${a.title}</td><td class="votes">${a.n}</td></tr>`;
+    });
+    out.innerHTML = html + "</table>";
+  } catch (e) {
+    out.innerHTML = '<div class="err">Could not load results.</div>';
+  }
+}
+document.getElementById("load").addEventListener("click", load);
+document.getElementById("key").addEventListener("keydown", e => { if (e.key === "Enter") load(); });
+</script>
+</body>
+</html>

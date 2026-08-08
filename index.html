@@ -190,6 +190,20 @@
   .panel-links a:hover,.panel-links a:focus-visible{background:rgba(212,180,131,0.12);}
   .panel-links a.primary{background:var(--gold);color:#171008;font-weight:500;}
   .panel-links a.primary:hover,.panel-links a.primary:focus-visible{background:#e3c795;}
+  .vote-btn{
+    margin-top:6px;width:100%;padding:13px 16px;cursor:pointer;
+    background:none;border:1px solid var(--gold);color:var(--gold);
+    font-family:'Jost',sans-serif;font-weight:500;font-size:11px;
+    letter-spacing:0.26em;text-transform:uppercase;
+    transition:background .25s,color .25s,border-color .25s;
+  }
+  .vote-btn:hover:not(:disabled),.vote-btn:focus-visible:not(:disabled){
+    background:rgba(212,180,131,0.14);
+  }
+  .vote-btn:disabled{cursor:default;}
+  .vote-btn.voted{
+    background:var(--gold);color:#171008;border-color:var(--gold);
+  }
   .panel-section-label{
     font-size:10px;letter-spacing:0.32em;text-transform:uppercase;color:var(--mist);
     margin-top:10px;padding-top:14px;border-top:1px solid rgba(212,180,131,0.12);
@@ -252,6 +266,7 @@
     <div class="panel-name" id="panel-name"></div>
     <div class="panel-country" id="panel-country"></div>
     <div class="panel-links" id="panel-links"></div>
+    <button class="vote-btn" id="panel-vote">♡ Vote for this artist</button>
     <div class="panel-section-label">Artist</div>
     <div class="panel-bio" id="panel-bio"></div>
     <div class="panel-section-label" id="panel-statement-label">On the Greek Spirit</div>
@@ -461,6 +476,45 @@ function linkBtn(href, label, primary) {
   return `<a href="${url}" target="_blank" rel="noopener" class="${primary ? "primary" : ""}">${label}</a>`;
 }
 
+// ---------- voting ----------
+const API_BASE = /vercel\.app$|^localhost$|^127\./.test(location.hostname) ? "" : "https://wcs-greece-globe.vercel.app";
+const votedSet = new Set(JSON.parse(localStorage.getItem("wcs_votes") || "[]"));
+const voteBtn = document.getElementById("panel-vote");
+let currentArtist = null;
+
+function refreshVoteBtn() {
+  if (!currentArtist) return;
+  if (votedSet.has(currentArtist.index)) {
+    voteBtn.textContent = "♥ Vote recorded";
+    voteBtn.classList.add("voted");
+    voteBtn.disabled = true;
+  } else {
+    voteBtn.textContent = "♡ Vote for this artist";
+    voteBtn.classList.remove("voted");
+    voteBtn.disabled = false;
+  }
+}
+
+voteBtn.addEventListener("click", async () => {
+  if (!currentArtist || votedSet.has(currentArtist.index)) return;
+  voteBtn.disabled = true;
+  voteBtn.textContent = "Recording…";
+  try {
+    const r = await fetch(API_BASE + "/api/vote", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ artist: currentArtist.index }),
+    });
+    if (!r.ok) throw new Error("vote failed");
+    votedSet.add(currentArtist.index);
+    localStorage.setItem("wcs_votes", JSON.stringify([...votedSet]));
+    refreshVoteBtn();
+  } catch (e) {
+    voteBtn.textContent = "Voting opens soon";
+    setTimeout(refreshVoteBtn, 2500);
+  }
+});
+
 function clearActive() {
   if (activeMarker) activeMarker.scale.set(0.1, 0.1, 0.1);
   if (activeArc) activeArc.line.material.opacity = 0.07;
@@ -488,6 +542,9 @@ function openPanel(artist, sprite) {
   const stLabel = document.getElementById("panel-statement-label");
   if (artist.statement) { st.textContent = artist.statement; st.style.display = ""; stLabel.style.display = ""; }
   else { st.style.display = "none"; stLabel.style.display = "none"; }
+
+  currentArtist = artist;
+  refreshVoteBtn();
 
   panel.scrollTop = 0;
   panel.classList.add("open");
