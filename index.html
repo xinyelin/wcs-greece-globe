@@ -27,12 +27,12 @@
     font-weight:300;
   }
   body.fallback-mode{overflow:auto;height:auto;}
+  /* colour is kept to the far corners so the centre stays black and the globe holds contrast */
   body::before{
     content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
     background:
-      radial-gradient(ellipse 60% 45% at 78% 18%, rgba(70,50,140,0.28), transparent 65%),
-      radial-gradient(ellipse 55% 50% at 15% 85%, rgba(20,60,110,0.30), transparent 65%),
-      radial-gradient(ellipse 35% 30% at 60% 70%, rgba(120,80,150,0.10), transparent 70%),
+      radial-gradient(ellipse 46% 38% at 92% 6%, rgba(74,54,142,0.22), transparent 60%),
+      radial-gradient(ellipse 44% 40% at 5% 96%, rgba(20,62,116,0.20), transparent 60%),
       var(--void);
   }
   #app{position:relative;width:100vw;height:100vh;z-index:1;}
@@ -387,7 +387,7 @@ const REDUCED_MOTION = window.matchMedia("(prefers-reduced-motion: reduce)").mat
 const IS_TOUCH = window.matchMedia("(pointer: coarse)").matches;
 const MARKER_SCALE = IS_TOUCH ? 0.13 : 0.1;
 const MARKER_ACTIVE = IS_TOUCH ? 0.24 : 0.19;
-const USE_TEXTURE = new URLSearchParams(location.search).get("globe") === "texture";
+const USE_TEXTURE = new URLSearchParams(location.search).get("globe") !== "points";
 
 const CONTINENT_COLORS = {
   "Europe": 0x7fb3d9,
@@ -503,11 +503,19 @@ const canvas = document.getElementById("globe-canvas");
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 1000);
 
+// Wide screens sit close so the globe commands the frame; only narrow/portrait
+// viewports pull back, and only as far as fitting the sphere actually requires.
 function cameraDistanceForAspect() {
   const halfV = THREE.MathUtils.degToRad(camera.fov / 2);
-  return Math.max(5.6, 2.7 / (Math.tan(halfV) * Math.min(camera.aspect, 1)));
+  const fitWidth = 2.15 / (Math.tan(halfV) * camera.aspect);
+  return Math.min(11.5, Math.max(5.65, fitWidth));
 }
 camera.position.set(0, 0.4, cameraDistanceForAspect());
+
+// Editorial composition: subject right, type left. Portrait keeps it centred.
+function globeOffsetX() {
+  return camera.aspect > 1.3 ? 0.78 : 0;
+}
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
@@ -522,13 +530,15 @@ controls.minDistance = 3.2;
 controls.maxDistance = Math.max(9, cameraDistanceForAspect() + 1.5);
 controls.enablePan = false;
 
-scene.add(new THREE.AmbientLight(0xbfd0ff, 0.5));
-const moon = new THREE.DirectionalLight(0xdfe8ff, 0.9);
-moon.position.set(5, 3, 5);
-scene.add(moon);
-const warm = new THREE.DirectionalLight(0xd4b483, 0.25);
-warm.position.set(-4, -2, -3);
-scene.add(warm);
+// Low cool ambient keeps the night side deep blue rather than dead black, while a
+// strong warm key preserves the terminator that gives the sphere its volume.
+scene.add(new THREE.AmbientLight(0x9db4d4, 0.42));
+const sun = new THREE.DirectionalLight(0xfff3dd, 1.32);
+sun.position.set(5, 2.6, 4.4);
+scene.add(sun);
+const rim = new THREE.DirectionalLight(0x5b8fc4, 0.34);
+rim.position.set(-5, -1.5, -3.5);
+scene.add(rim);
 
 const RADIUS = 2;
 
@@ -558,21 +568,31 @@ function latLngToVector3(lat, lng, r) {
 
 // globe body — a solid dark sphere always sits underneath so far-side detail is occluded
 const globe = new THREE.Group();
+globe.position.x = globeOffsetX();
+controls.target.x = globe.position.x;
+controls.update();
 scene.add(globe);
 
-const core = new THREE.Mesh(
-  new THREE.SphereGeometry(RADIUS * 0.985, 48, 48),
-  new THREE.MeshPhongMaterial({ color: 0x0a1524, shininess: 2 })
-);
-globe.add(core);
-
 if (USE_TEXTURE) {
-  const mat = new THREE.MeshPhongMaterial({ color: 0x24405c, shininess: 4 });
+  // The texture carries its own colour; tinting it only drains the photograph.
+  const mat = new THREE.MeshPhongMaterial({
+    color: 0x1e3550, specular: 0x0d141d, shininess: 9,
+  });
   new THREE.TextureLoader().load("earth.jpg", (tex) => {
-    mat.map = tex; mat.color.set(0x9fb4cc); mat.needsUpdate = true;
+    if (renderer.capabilities.getMaxAnisotropy) {
+      tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+    }
+    mat.map = tex;
+    mat.color.set(0xffffff);
+    mat.needsUpdate = true;
   }, undefined, () => {});
-  globe.add(new THREE.Mesh(new THREE.SphereGeometry(RADIUS, 64, 64), mat));
+  globe.add(new THREE.Mesh(new THREE.SphereGeometry(RADIUS, 96, 96), mat));
 } else {
+  // opaque shell so land points on the far side stay hidden
+  globe.add(new THREE.Mesh(
+    new THREE.SphereGeometry(RADIUS * 0.985, 48, 48),
+    new THREE.MeshPhongMaterial({ color: 0x0a1524, shininess: 2 })
+  ));
   // land rendered as a field of light points, decoded from a packed bitmask
   const bin = atob(LANDMASK);
   const pts = [];
@@ -594,17 +614,64 @@ if (USE_TEXTURE) {
   })));
 }
 
-globe.add(new THREE.Mesh(
-  new THREE.SphereGeometry(RADIUS * 1.035, 48, 48),
-  new THREE.MeshBasicMaterial({ color: 0x7fb3d9, transparent: true, opacity: 0.06, side: THREE.BackSide })
-));
+// Atmosphere: a fresnel shell that is transparent face-on and bright at the limb,
+// which is what reads as air around a planet rather than a flat blue overlay.
+let atmosphereMat = null;
+(function addAtmosphere() {
+  const flat = () => globe.add(new THREE.Mesh(
+    new THREE.SphereGeometry(RADIUS * 1.035, 48, 48),
+    new THREE.MeshBasicMaterial({ color: 0x7fb3d9, transparent: true, opacity: 0.07, side: THREE.BackSide })
+  ));
+  try {
+    const shell = new THREE.Mesh(
+      new THREE.SphereGeometry(RADIUS * 1.06, 64, 64),
+      new THREE.ShaderMaterial({
+        uniforms: {
+          glowColor: { value: new THREE.Color(0x86bdf0) },
+          intensity: { value: 1.3 },
+          falloff: { value: 1.5 },
+          sunDir: { value: new THREE.Vector3(0, 0, 1) },
+        },
+        vertexShader: [
+          "varying vec3 vNormal;",
+          "varying vec3 vView;",
+          "void main() {",
+          "  vNormal = normalize(normalMatrix * normal);",
+          "  vec4 mv = modelViewMatrix * vec4(position, 1.0);",
+          "  vView = -mv.xyz;",
+          "  gl_Position = projectionMatrix * mv;",
+          "}",
+        ].join("\n"),
+        fragmentShader: [
+          "uniform vec3 glowColor;",
+          "uniform float intensity;",
+          "uniform float falloff;",
+          "uniform vec3 sunDir;",
+          "varying vec3 vNormal;",
+          "varying vec3 vView;",
+          "void main() {",
+          "  // Back faces point away from the camera, so magnitude stands in for how much",
+          "  // air the ray crossed: brightest hugging the horizon, fading out into space.",
+          "  float depth = abs(dot(normalize(vView), normalize(vNormal)));",
+          "  // Air only glows where the sun reaches it, so the night limb stays black.",
+          "  float lit = smoothstep(-0.32, 0.42, dot(normalize(vNormal), normalize(sunDir)));",
+          "  gl_FragColor = vec4(glowColor, pow(depth, falloff) * intensity * lit);",
+          "}",
+        ].join("\n"),
+        side: THREE.BackSide,
+        blending: THREE.AdditiveBlending,
+        transparent: true,
+        depthWrite: false,
+      })
+    );
+    atmosphereMat = shell.material;
+    globe.add(shell);
+  } catch (e) {
+    flat();
+  }
+})();
 
-const halo = new THREE.Sprite(new THREE.SpriteMaterial({
-  map: glowTex, color: 0x3a5d8f, transparent: true, opacity: 0.4,
-  blending: THREE.AdditiveBlending, depthWrite: false,
-}));
-halo.scale.set(7.5, 7.5, 1);
-scene.add(halo);
+// (no backdrop bloom: it hazed the limb the atmosphere shell already draws)
 
 // ---------- markers (materials shared per continent) ----------
 const markerMats = {};
@@ -645,7 +712,7 @@ markers.forEach((m) => {
 const arcGeo = new THREE.BufferGeometry();
 arcGeo.setAttribute("position", new THREE.Float32BufferAttribute(segPositions, 3));
 globe.add(new THREE.LineSegments(arcGeo, new THREE.LineBasicMaterial({
-  color: 0xd4b483, transparent: true, opacity: 0.07,
+  color: 0xe8c894, transparent: true, opacity: 0.13,
   blending: THREE.AdditiveBlending, depthWrite: false,
 })));
 
@@ -790,8 +857,11 @@ window.addEventListener("resize", () => {
   const d = cameraDistanceForAspect();
   controls.maxDistance = Math.max(9, d + 1.5);
   if (camera.position.length() < d) camera.position.setLength(d);
+  globe.position.x = globeOffsetX();
+  controls.target.x = globe.position.x;
 });
 
+const sunDirView = new THREE.Vector3();
 const t0 = performance.now();
 let shown = false;
 (function animate() {
@@ -817,6 +887,11 @@ let shown = false;
       p.sprite.material.opacity = 0;
     }
   });
+
+  if (atmosphereMat) {
+    sunDirView.copy(sun.position).normalize().transformDirection(camera.matrixWorldInverse);
+    atmosphereMat.uniforms.sunDir.value.copy(sunDirView);
+  }
 
   controls.update();
   renderer.render(scene, camera);
