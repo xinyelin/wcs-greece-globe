@@ -30,7 +30,12 @@ module.exports = async (req, res) => {
     if (used === 1) await redis(["EXPIRE", capKey, "86400"]);
     if (used > 300) return res.status(429).json({ error: "Too many votes today" });
 
-    await redis(["HINCRBY", "votes", String(idx), "1"]);
+    if (req.body && req.body.action === "unvote") {
+      const after = await redis(["HINCRBY", "votes", String(idx), "-1"]);
+      if (after < 0) await redis(["HINCRBY", "votes", String(idx), "1"]); // clamp at zero
+    } else {
+      await redis(["HINCRBY", "votes", String(idx), "1"]);
+    }
     return res.status(200).json({ ok: true });
   } catch (e) {
     return res.status(500).json({ error: "Storage error" });

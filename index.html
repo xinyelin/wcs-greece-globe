@@ -204,6 +204,12 @@
   .vote-btn.voted{
     background:var(--gold);color:#171008;border-color:var(--gold);
   }
+  .vote-btn.voted .undo-hint{display:none;font-weight:400;}
+  .vote-btn.voted:hover .default-text,.vote-btn.voted:focus-visible .default-text{display:none;}
+  .vote-btn.voted:hover .undo-hint,.vote-btn.voted:focus-visible .undo-hint{display:inline;}
+  .vote-btn.voted:hover,.vote-btn.voted:focus-visible{
+    background:none;color:var(--gold);
+  }
   .panel-section-label{
     font-size:10px;letter-spacing:0.32em;text-transform:uppercase;color:var(--mist);
     margin-top:10px;padding-top:14px;border-top:1px solid rgba(212,180,131,0.12);
@@ -484,29 +490,31 @@ let currentArtist = null;
 
 function refreshVoteBtn() {
   if (!currentArtist) return;
+  voteBtn.disabled = false;
   if (votedSet.has(currentArtist.index)) {
-    voteBtn.textContent = "♥ Vote recorded";
+    voteBtn.innerHTML = '<span class="default-text">♥ Vote recorded</span><span class="undo-hint">Undo my vote</span>';
     voteBtn.classList.add("voted");
-    voteBtn.disabled = true;
   } else {
     voteBtn.textContent = "♡ Vote for this artist";
     voteBtn.classList.remove("voted");
-    voteBtn.disabled = false;
   }
 }
 
 voteBtn.addEventListener("click", async () => {
-  if (!currentArtist || votedSet.has(currentArtist.index)) return;
+  if (!currentArtist || voteBtn.disabled) return;
+  const undoing = votedSet.has(currentArtist.index);
   voteBtn.disabled = true;
-  voteBtn.textContent = "Recording…";
+  voteBtn.classList.remove("voted");
+  voteBtn.textContent = undoing ? "Removing…" : "Recording…";
   try {
     const r = await fetch(API_BASE + "/api/vote", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ artist: currentArtist.index }),
+      body: JSON.stringify({ artist: currentArtist.index, action: undoing ? "unvote" : "vote" }),
     });
     if (!r.ok) throw new Error("vote failed");
-    votedSet.add(currentArtist.index);
+    if (undoing) votedSet.delete(currentArtist.index);
+    else votedSet.add(currentArtist.index);
     localStorage.setItem("wcs_votes", JSON.stringify([...votedSet]));
     refreshVoteBtn();
   } catch (e) {
