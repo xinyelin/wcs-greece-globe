@@ -220,6 +220,9 @@
   @media (prefers-reduced-motion: reduce){
     *{animation:none !important;transition:none !important;}
   }
+  @supports (height:100dvh){
+    #app{height:100dvh;}
+  }
   @media (max-width:900px){
     .label-block{left:24px;top:24px;max-width:300px;}
     h1{font-size:48px;}
@@ -228,6 +231,33 @@
     .meta-block{left:24px;bottom:24px;}
     .mission,.hint{display:none;}
     #artist-panel{width:100%;}
+  }
+  @media (max-width:700px){
+    .label-block{left:20px;right:20px;top:16px;max-width:none;}
+    .eyebrow{font-size:13px;letter-spacing:0.24em;}
+    .eyebrow .salon{font-size:10px;letter-spacing:0.3em;margin-top:2px;}
+    .chapter{font-size:13px;margin-top:10px;}
+    h1{font-size:32px;}
+    .dek{display:none;}
+    .diplomacy{margin-top:10px;padding-top:8px;font-size:8.5px;letter-spacing:0.18em;line-height:1.9;}
+    .host-card{bottom:20px;right:16px;max-width:170px;}
+    .host-card .label{font-size:8.5px;letter-spacing:0.24em;}
+    .host-card .name{font-size:15px;font-style:normal;margin-top:4px;}
+    .host-card .role{font-size:10px;margin-top:2px;}
+    .host-card .rule{display:none;}
+    .meta-block{left:16px;bottom:20px;}
+    .stats{gap:18px;}
+    .stat b{font-size:22px;}
+    .stat span{font-size:8px;letter-spacing:0.2em;margin-top:3px;}
+    .legend{display:none;}
+    #artist-panel{width:100%;padding:16px 22px 40px;}
+    .panel-close{
+      font-size:26px;padding:10px 12px;margin-right:-12px;
+      position:sticky;top:0;background:rgba(9,12,22,0.85);border-radius:50%;
+    }
+    .panel-name{font-size:26px;}
+    .artwork{min-height:130px;}
+    .vote-btn{padding:15px 16px;}
   }
 </style>
 </head>
@@ -308,10 +338,21 @@ Object.entries(CONTINENT_COLORS).forEach(([name, c]) => {
 });
 
 // ---------- scene ----------
+const IS_TOUCH = window.matchMedia("(pointer: coarse)").matches;
+const MARKER_SCALE = IS_TOUCH ? 0.13 : 0.1;
+const MARKER_ACTIVE = IS_TOUCH ? 0.24 : 0.19;
+
 const canvas = document.getElementById("globe-canvas");
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 1000);
-camera.position.set(0, 0.4, 5.6);
+
+// keep the whole globe in frame on narrow (portrait) screens
+function cameraDistanceForAspect() {
+  const halfV = THREE.MathUtils.degToRad(camera.fov / 2);
+  const needed = 2.7 / (Math.tan(halfV) * Math.min(camera.aspect, 1));
+  return Math.max(5.6, needed);
+}
+camera.position.set(0, 0.4, cameraDistanceForAspect());
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -323,7 +364,7 @@ controls.dampingFactor = 0.08;
 controls.autoRotate = !REDUCED_MOTION;
 controls.autoRotateSpeed = 0.45;
 controls.minDistance = 3.2;
-controls.maxDistance = 9;
+controls.maxDistance = Math.max(9, cameraDistanceForAspect() + 1.5);
 controls.enablePan = false;
 
 scene.add(new THREE.AmbientLight(0xbfd0ff, 0.5));
@@ -394,7 +435,7 @@ ARTISTS.forEach((artist) => {
     transparent: true, blending: THREE.AdditiveBlending, depthWrite: false,
   }));
   sprite.position.copy(pos);
-  sprite.scale.set(0.1, 0.1, 0.1);
+  sprite.scale.set(MARKER_SCALE, MARKER_SCALE, MARKER_SCALE);
   sprite.userData = artist;
   globe.add(sprite); // parent to globe so arcs and points rotate together
   markers.push(sprite);
@@ -465,7 +506,7 @@ const starsNear = starLayer(250, 0.5, 0.65, 30);
 
 // ---------- interaction ----------
 const raycaster = new THREE.Raycaster();
-raycaster.params.Sprite = { threshold: 0.15 };
+raycaster.params.Sprite = { threshold: IS_TOUCH ? 0.3 : 0.15 };
 const mouse = new THREE.Vector2();
 const panel = document.getElementById("artist-panel");
 let activeMarker = null, activeArc = null;
@@ -524,7 +565,7 @@ voteBtn.addEventListener("click", async () => {
 });
 
 function clearActive() {
-  if (activeMarker) activeMarker.scale.set(0.1, 0.1, 0.1);
+  if (activeMarker) activeMarker.scale.set(MARKER_SCALE, MARKER_SCALE, MARKER_SCALE);
   if (activeArc) activeArc.line.material.opacity = 0.07;
   activeMarker = activeArc = null;
 }
@@ -532,7 +573,7 @@ function clearActive() {
 function openPanel(artist, sprite) {
   clearActive();
   activeMarker = sprite;
-  sprite.scale.set(0.19, 0.19, 0.19);
+  sprite.scale.set(MARKER_ACTIVE, MARKER_ACTIVE, MARKER_ACTIVE);
   activeArc = arcs.find(a => a.marker === sprite) || null;
   if (activeArc) activeArc.line.material.opacity = 0.55;
 
@@ -582,6 +623,11 @@ window.addEventListener("resize", () => {
   camera.aspect = innerWidth / innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(innerWidth, innerHeight);
+  const d = cameraDistanceForAspect();
+  controls.maxDistance = Math.max(9, d + 1.5);
+  if (camera.position.length() < d) {
+    camera.position.setLength(d);
+  }
 });
 
 // ---------- animation ----------
