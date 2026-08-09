@@ -113,8 +113,48 @@
   .search-btn:hover,.search-btn:focus-visible{
     border-color:var(--gold);background:rgba(212,180,131,0.12);
   }
-  .search-btn.culture-btn{right:110px;}
+  /* the culture rail (below) is the desktop entry point; this button only
+     resurfaces on narrow screens where a fixed rail has nowhere to sit */
+  .search-btn.culture-btn{right:110px;display:none;}
   body.fallback-mode .search-btn{display:none;}
+
+  /* ---------- culture rail: a quiet spine of Greek ideas, off the globe entirely ---------- */
+  /* the right edge only has the search button above and the mission line
+     below, both short and fixed-height, so a modest fixed clearance clears
+     them at any realistic viewport height. overflow is left visible (no
+     scroll clipping) because the flyout labels below need to escape the
+     rail's own box to the left without being cut off. */
+  .culture-rail{
+    position:absolute;right:52px;top:130px;bottom:130px;z-index:5;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:10px;padding:6px 2px;
+    animation:rise 1.2s .4s ease both;
+  }
+  .rail-item{
+    position:relative;width:34px;height:34px;border-radius:50%;flex:none;
+    border:1px solid var(--hairline);background:rgba(9,16,26,0.45);
+    backdrop-filter:blur(4px);color:var(--gold);cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    transition:border-color .25s,background .25s,transform .25s;
+  }
+  .rail-item svg{width:15px;height:15px;overflow:visible;}
+  .rail-item:hover,.rail-item:focus-visible{
+    border-color:var(--gold);background:rgba(212,180,131,0.14);transform:scale(1.08);
+  }
+  .rail-flyout{
+    position:absolute;right:52px;top:50%;transform:translateY(-50%) translateX(6px);
+    white-space:nowrap;pointer-events:none;text-align:right;
+    background:rgba(9,16,26,0.92);border:1px solid var(--hairline);border-radius:3px;
+    padding:9px 16px;opacity:0;transition:opacity .2s,transform .2s;
+  }
+  .rail-flyout b{
+    font-family:'Fraunces',Georgia,serif;font-weight:400;font-size:14px;color:var(--marble);
+  }
+  .rail-flyout i{font-style:italic;color:var(--gold);font-size:12px;margin-left:8px;}
+  .rail-item:hover .rail-flyout,.rail-item:focus-visible .rail-flyout{
+    opacity:1;transform:translateY(-50%) translateX(0);
+  }
+  body.fallback-mode .culture-rail{display:none;}
 
   /* ---------- shared full-screen overlay (search + explore-Greece) ---------- */
   .overlay{
@@ -165,25 +205,6 @@
   }
   #culture-list{margin-top:22px;}
   .lr-greek{font-style:italic;color:var(--gold);font-size:0.82em;margin-left:8px;font-weight:400;}
-
-  /* ---------- host ---------- */
-  .host-card{
-    position:absolute;top:44px;right:190px;z-index:5;max-width:300px;
-    text-align:right;animation:rise 1.2s .2s ease both;
-  }
-  .host-card .label{
-    font-size:10.5px;letter-spacing:0.42em;text-transform:uppercase;
-    color:var(--gold);font-weight:400;
-  }
-  .host-card .name{
-    font-family:'Fraunces',Georgia,serif;font-weight:400;font-style:italic;
-    font-size:30px;color:var(--marble);margin-top:8px;
-  }
-  .host-card .role{
-    margin-top:6px;font-size:12.5px;line-height:1.6;color:var(--mist);
-    letter-spacing:0.04em;
-  }
-  .host-card .rule{width:64px;height:1px;background:var(--gold-dim);margin:14px 0 0 auto;}
 
   /* ---------- stats + legend ---------- */
   .meta-block{position:absolute;bottom:40px;left:52px;z-index:5;animation:rise 1.2s .35s ease both;}
@@ -324,7 +345,6 @@
   #fallback{display:none;position:relative;z-index:2;padding:56px 52px 80px;}
   body.fallback-mode #fallback{display:block;}
   body.fallback-mode .label-block,
-  body.fallback-mode .host-card,
   body.fallback-mode .meta-block,
   body.fallback-mode .hint,
   body.fallback-mode .mission,
@@ -368,10 +388,10 @@
     *{animation:none !important;transition:none !important;}
   }
   @media (max-width:900px){
+    .culture-rail{display:none;}
+    .search-btn.culture-btn{display:flex;}
     .label-block{left:24px;top:24px;max-width:300px;}
     h1{font-size:48px;}
-    .host-card{position:absolute;top:auto;bottom:120px;right:24px;max-width:240px;}
-    .host-card .name{font-size:22px;}
     .meta-block{left:24px;bottom:24px;}
     .mission,.hint{display:none;}
     #artist-panel{width:100%;}
@@ -392,11 +412,6 @@
     h1{font-size:32px;}
     .dek{display:none;}
     .diplomacy{margin-top:10px;padding-top:8px;font-size:8.5px;letter-spacing:0.18em;line-height:1.9;}
-    .host-card{bottom:20px;right:16px;max-width:170px;}
-    .host-card .label{font-size:8.5px;letter-spacing:0.24em;}
-    .host-card .name{font-size:15px;font-style:normal;margin-top:4px;}
-    .host-card .role{font-size:10px;margin-top:2px;}
-    .host-card .rule{display:none;}
     .meta-block{left:16px;bottom:20px;}
     .stats{gap:18px;}
     .stat b{font-size:22px;}
@@ -463,13 +478,6 @@
     </div>
   </div>
 
-  <div class="host-card">
-    <div class="label">In Collaboration With</div>
-    <div class="name">The Consulate General of Greece</div>
-    <div class="role">San Francisco</div>
-    <div class="rule"></div>
-  </div>
-
   <div class="meta-block">
     <div class="stats">
       <div class="stat"><b id="stat-artists">—</b><span>Artists</span></div>
@@ -477,6 +485,41 @@
       <div class="stat"><b>I</b><span>Chapter</span></div>
     </div>
   </div>
+
+  <nav class="culture-rail" aria-label="Explore Greek culture">
+    <button class="rail-item" data-key="agora" aria-label="Agora">
+      <svg viewBox="0 0 48 48" fill="none"><path d="M16 34V16M32 34V16M12 16h24M10 34h28" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      <span class="rail-flyout"><b>Agora</b><i>ἀγορά</i></span>
+    </button>
+    <button class="rail-item" data-key="xenia" aria-label="Xenia">
+      <svg viewBox="0 0 48 48" fill="none"><path d="M14 34V18a10 10 0 0 1 20 0v16M10 35h28" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      <span class="rail-flyout"><b>Xenia</b><i>ξενία</i></span>
+    </button>
+    <button class="rail-item" data-key="kairos" aria-label="Kairos">
+      <svg viewBox="0 0 48 48" fill="none"><path d="M14 12H34L24 24L34 36H14L24 24L14 12Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg>
+      <span class="rail-flyout"><b>Kairos</b><i>καιρός</i></span>
+    </button>
+    <button class="rail-item" data-key="omphalos" aria-label="Omphalos">
+      <svg viewBox="0 0 48 48" fill="none"><ellipse cx="24" cy="26" rx="10" ry="13" stroke="currentColor" stroke-width="1.6"/><path d="M16 21q8 -6 16 0M15 30q9 5 18 0" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+      <span class="rail-flyout"><b>Omphalos</b><i>ὀμφαλός</i></span>
+    </button>
+    <button class="rail-item" data-key="olive" aria-label="The Olive Branch">
+      <svg viewBox="0 0 48 48" fill="none"><path d="M10 34Q24 20 38 10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><ellipse cx="16" cy="29" rx="4.4" ry="2" transform="rotate(-30 16 29)" stroke="currentColor" stroke-width="1.2"/><ellipse cx="24" cy="21.5" rx="4.4" ry="2" transform="rotate(-35 24 21.5)" stroke="currentColor" stroke-width="1.2"/><ellipse cx="32" cy="14.5" rx="4.4" ry="2" transform="rotate(-40 32 14.5)" stroke="currentColor" stroke-width="1.2"/></svg>
+      <span class="rail-flyout"><b>The Olive Branch</b><i>ἐλαία</i></span>
+    </button>
+    <button class="rail-item" data-key="symposium" aria-label="Symposium">
+      <svg viewBox="0 0 48 48" fill="none"><path d="M8 18Q24 34 40 18M6 17q-4 5 3 9M42 17q4 5 -3 9M24 30v10M16 41h16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <span class="rail-flyout"><b>Symposium</b><i>συμπόσιον</i></span>
+    </button>
+    <button class="rail-item" data-key="philotimo" aria-label="Philotimo">
+      <svg viewBox="0 0 48 48" fill="none"><path d="M24 8L36 14V26Q36 38 24 42Q12 38 12 26V14Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M24 10V40" stroke="currentColor" stroke-width="1.2"/></svg>
+      <span class="rail-flyout"><b>Philotimo</b><i>φιλότιμο</i></span>
+    </button>
+    <button class="rail-item" data-key="meraki" aria-label="Meraki">
+      <svg viewBox="0 0 48 48" fill="none"><path d="M24 8C32 20 30 30 24 40C18 30 16 20 24 8Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+      <span class="rail-flyout"><b>Meraki</b><i>μεράκι</i></span>
+    </button>
+  </nav>
 
   <div class="hint">Drag to orbit · Scroll to zoom · Select a light to meet its artist</div>
   <div class="mission">Ideas worth feeling.<br>Culture worth remembering.</div>
@@ -650,6 +693,73 @@ function webglAvailable() {
     return !!(window.WebGLRenderingContext && (c.getContext("webgl") || c.getContext("experimental-webgl")));
   } catch (e) { return false; }
 }
+
+// ---------- explore Greece: eight culture cards ----------
+// Pure DOM content — kept independent of the 3D scene so the rail and the
+// overlay work identically whether or not the globe itself renders.
+const cultureOverlay = document.getElementById("culture-overlay");
+const cultureList = document.getElementById("culture-list");
+
+function renderCultureList(expandKey) {
+  cultureList.innerHTML = CULTURE.map(c => `
+    <div class="list-item" data-key="${c.key}">
+      <button class="list-row" aria-expanded="false">
+        <span class="lr-name">${esc(c.term)}<em class="lr-greek">${c.greek}</em></span>
+        <span class="lr-title">${esc(c.oneLiner)}</span>
+        <span class="lr-loc">${esc(c.place)}, Greece</span>
+        <span class="lr-chevron" aria-hidden="true">＋</span>
+      </button>
+      <div class="row-detail"><div class="row-detail-inner"></div></div>
+    </div>`).join("");
+
+  let openItem = null;
+  cultureList.querySelectorAll(".list-item").forEach(item => {
+    const btn = item.querySelector(".list-row");
+    const c = CULTURE.find(x => x.key === item.dataset.key);
+    btn.addEventListener("click", () => {
+      if (openItem === item) {
+        item.classList.remove("open");
+        btn.setAttribute("aria-expanded", "false");
+        openItem = null;
+        return;
+      }
+      if (openItem) {
+        openItem.classList.remove("open");
+        openItem.querySelector(".list-row").setAttribute("aria-expanded", "false");
+      }
+      const inner = item.querySelector(".row-detail-inner");
+      if (!inner.innerHTML) inner.innerHTML = `<div class="panel-bio">${esc(c.body)}</div>`;
+      item.classList.add("open");
+      btn.setAttribute("aria-expanded", "true");
+      openItem = item;
+      setTimeout(() => btn.scrollIntoView({ behavior: "smooth", block: "start" }), 200);
+    });
+  });
+
+  if (expandKey) {
+    const item = cultureList.querySelector(`.list-item[data-key="${expandKey}"]`);
+    if (item) item.querySelector(".list-row").click();
+  }
+}
+
+function openCultureOverlay(expandKey) {
+  renderCultureList(expandKey);
+  cultureOverlay.hidden = false;
+  requestAnimationFrame(() => cultureOverlay.classList.add("open"));
+}
+function closeCultureOverlay() {
+  cultureOverlay.classList.remove("open");
+  setTimeout(() => { cultureOverlay.hidden = true; }, 300);
+}
+document.getElementById("culture-btn").addEventListener("click", () => openCultureOverlay());
+document.getElementById("culture-close").addEventListener("click", closeCultureOverlay);
+cultureOverlay.addEventListener("click", (e) => { if (e.target === cultureOverlay) closeCultureOverlay(); });
+document.querySelectorAll(".rail-item").forEach(btn => {
+  btn.addEventListener("click", () => openCultureOverlay(btn.dataset.key));
+});
+window.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !cultureOverlay.hidden) closeCultureOverlay();
+});
 
 if (typeof THREE === "undefined" || !webglAvailable()) {
   showFallback();
@@ -862,105 +972,6 @@ ARTISTS.forEach((artist) => {
   markers.push(sprite);
 });
 
-// ---------- culture markers: eight small medallions across the mainland ----------
-function makeCultureIcon(key) {
-  const size = 128, c = document.createElement("canvas");
-  c.width = c.height = size;
-  const ctx = c.getContext("2d");
-  const cx = size / 2, cy = size / 2;
-
-  // a soft dark medallion behind every icon keeps it legible over both gold
-  // land and navy ocean
-  const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, size * 0.31);
-  g.addColorStop(0, "rgba(6,10,18,0.65)");
-  g.addColorStop(1, "rgba(6,10,18,0)");
-  ctx.fillStyle = g;
-  ctx.beginPath(); ctx.arc(cx, cy, size * 0.31, 0, Math.PI * 2); ctx.fill();
-
-  ctx.strokeStyle = "#ecd9ad";
-  ctx.lineWidth = 3.2;
-  ctx.lineCap = "round";
-  ctx.lineJoin = "round";
-  ctx.beginPath();
-  switch (key) {
-    case "agora": // doric column
-      ctx.moveTo(cx - 16, cy + 26); ctx.lineTo(cx - 16, cy - 18);
-      ctx.moveTo(cx + 16, cy + 26); ctx.lineTo(cx + 16, cy - 18);
-      ctx.moveTo(cx - 22, cy - 18); ctx.lineTo(cx + 22, cy - 18);
-      ctx.moveTo(cx - 26, cy + 26); ctx.lineTo(cx + 26, cy + 26);
-      break;
-    case "xenia": // open doorway
-      ctx.moveTo(cx - 18, cy + 24); ctx.lineTo(cx - 18, cy - 6);
-      ctx.arc(cx, cy - 6, 18, Math.PI, 0, false);
-      ctx.lineTo(cx + 18, cy + 24);
-      ctx.moveTo(cx - 24, cy + 26); ctx.lineTo(cx + 24, cy + 26);
-      break;
-    case "kairos": // hourglass
-      ctx.moveTo(cx - 16, cy - 22); ctx.lineTo(cx + 16, cy - 22); ctx.lineTo(cx, cy); ctx.closePath();
-      ctx.moveTo(cx - 16, cy + 22); ctx.lineTo(cx + 16, cy + 22); ctx.lineTo(cx, cy); ctx.closePath();
-      break;
-    case "omphalos": // carved dome stone
-      ctx.ellipse(cx, cy + 2, 17, 22, 0, 0, Math.PI * 2);
-      ctx.moveTo(cx - 10, cy - 4); ctx.quadraticCurveTo(cx, cy - 13, cx + 10, cy - 4);
-      ctx.moveTo(cx - 11, cy + 8); ctx.quadraticCurveTo(cx, cy + 17, cx + 11, cy + 8);
-      break;
-    case "olive": // curved branch, three leaves
-      ctx.moveTo(cx - 20, cy + 18); ctx.quadraticCurveTo(cx, cy - 6, cx + 20, cy - 20);
-      break;
-    case "symposium": // kylix cup
-      ctx.moveTo(cx - 20, cy - 8); ctx.quadraticCurveTo(cx, cy + 12, cx + 20, cy - 8);
-      ctx.moveTo(cx - 24, cy - 10); ctx.quadraticCurveTo(cx - 30, cy - 2, cx - 22, cy + 4);
-      ctx.moveTo(cx + 24, cy - 10); ctx.quadraticCurveTo(cx + 30, cy - 2, cx + 22, cy + 4);
-      ctx.moveTo(cx, cy + 11); ctx.lineTo(cx, cy + 21);
-      ctx.moveTo(cx - 14, cy + 23); ctx.lineTo(cx + 14, cy + 23);
-      break;
-    case "philotimo": // shield
-      ctx.moveTo(cx, cy - 22);
-      ctx.lineTo(cx + 18, cy - 14); ctx.lineTo(cx + 18, cy + 8);
-      ctx.quadraticCurveTo(cx + 18, cy + 22, cx, cy + 26);
-      ctx.quadraticCurveTo(cx - 18, cy + 22, cx - 18, cy + 8);
-      ctx.lineTo(cx - 18, cy - 14);
-      ctx.closePath();
-      ctx.moveTo(cx, cy - 18); ctx.lineTo(cx, cy + 20);
-      break;
-    case "meraki": // flame
-      ctx.moveTo(cx, cy - 24);
-      ctx.quadraticCurveTo(cx + 18, cy - 6, cx + 10, cy + 12);
-      ctx.quadraticCurveTo(cx + 4, cy + 24, cx, cy + 24);
-      ctx.quadraticCurveTo(cx - 4, cy + 24, cx - 10, cy + 12);
-      ctx.quadraticCurveTo(cx - 18, cy - 6, cx, cy - 24);
-      break;
-  }
-  ctx.stroke();
-
-  if (key === "olive") {
-    // leaves drawn as a separate pass so their own transforms don't disturb the branch path
-    [[-10, 10, -26], [2, -2, -18], [12, -12, -8]].forEach(([lx, ly, rot]) => {
-      ctx.save();
-      ctx.translate(cx + lx, cy + ly);
-      ctx.rotate(rot * Math.PI / 180);
-      ctx.beginPath();
-      ctx.ellipse(0, 0, 8, 3.4, 0, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.restore();
-    });
-  }
-  return new THREE.CanvasTexture(c);
-}
-
-const cultureMarkers = [];
-CULTURE.forEach((c) => {
-  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
-    map: makeCultureIcon(c.key), transparent: true, depthWrite: false,
-  }));
-  sprite.position.copy(latLngToVector3(c.lat, c.lng, RADIUS * 1.02));
-  // several of these sit close together in real geography (Athens, Olympia,
-  // Delphi); a smaller mark keeps that cluster legible at close zoom
-  sprite.scale.set(0.15, 0.15, 0.15);
-  sprite.userData = c;
-  globe.add(sprite);
-  cultureMarkers.push(sprite);
-});
 
 // ---------- threads of light returning to Athens (one merged draw call) ----------
 const ATHENS = latLngToVector3(37.98, 23.73, RADIUS * 1.015);
@@ -1196,12 +1207,6 @@ renderer.domElement.addEventListener("click", (e) => {
   setMouse(e);
   raycaster.setFromCamera(mouse, camera);
 
-  const cultureHits = raycaster.intersectObjects(cultureMarkers);
-  if (cultureHits.length) {
-    openCultureOverlay(cultureHits[0].object.userData.key);
-    return;
-  }
-
   const hits = raycaster.intersectObjects(markers);
   if (!hits.length) return;
   // gather every light under the cursor on the near side of the globe
@@ -1223,7 +1228,7 @@ renderer.domElement.addEventListener("click", (e) => {
 renderer.domElement.addEventListener("pointermove", (e) => {
   setMouse(e);
   raycaster.setFromCamera(mouse, camera);
-  const hovering = raycaster.intersectObjects(markers).length || raycaster.intersectObjects(cultureMarkers).length;
+  const hovering = raycaster.intersectObjects(markers).length > 0;
   renderer.domElement.style.cursor = hovering ? "pointer" : "grab";
 });
 
@@ -1303,74 +1308,9 @@ document.getElementById("search-close").addEventListener("click", closeSearch);
 searchOverlay.addEventListener("click", (e) => { if (e.target === searchOverlay) closeSearch(); });
 searchInput.addEventListener("input", () => renderSearch(searchInput.value));
 
-// ---------- explore Greece: eight culture cards, same fold-in-place pattern as the gathering list ----------
-const cultureOverlay = document.getElementById("culture-overlay");
-const cultureList = document.getElementById("culture-list");
-
-function renderCultureList(expandKey) {
-  cultureList.innerHTML = CULTURE.map(c => `
-    <div class="list-item" data-key="${c.key}">
-      <button class="list-row" aria-expanded="false">
-        <span class="lr-name">${esc(c.term)}<em class="lr-greek">${c.greek}</em></span>
-        <span class="lr-title">${esc(c.oneLiner)}</span>
-        <span class="lr-loc">${esc(c.place)}, Greece</span>
-        <span class="lr-chevron" aria-hidden="true">＋</span>
-      </button>
-      <div class="row-detail"><div class="row-detail-inner"></div></div>
-    </div>`).join("");
-
-  let openItem = null;
-  cultureList.querySelectorAll(".list-item").forEach(item => {
-    const btn = item.querySelector(".list-row");
-    const c = CULTURE.find(x => x.key === item.dataset.key);
-    btn.addEventListener("click", () => {
-      if (openItem === item) {
-        item.classList.remove("open");
-        btn.setAttribute("aria-expanded", "false");
-        openItem = null;
-        return;
-      }
-      if (openItem) {
-        openItem.classList.remove("open");
-        openItem.querySelector(".list-row").setAttribute("aria-expanded", "false");
-      }
-      const inner = item.querySelector(".row-detail-inner");
-      if (!inner.innerHTML) inner.innerHTML = `<div class="panel-bio">${esc(c.body)}</div>`;
-      item.classList.add("open");
-      btn.setAttribute("aria-expanded", "true");
-      openItem = item;
-      setTimeout(() => btn.scrollIntoView({ behavior: "smooth", block: "start" }), 200);
-    });
-  });
-
-  if (expandKey) {
-    const item = cultureList.querySelector(`.list-item[data-key="${expandKey}"]`);
-    if (item) item.querySelector(".list-row").click();
-  }
-}
-
-function openCultureOverlay(expandKey) {
-  renderCultureList(expandKey);
-  cultureOverlay.hidden = false;
-  requestAnimationFrame(() => cultureOverlay.classList.add("open"));
-}
-function closeCultureOverlay() {
-  cultureOverlay.classList.remove("open");
-  setTimeout(() => { cultureOverlay.hidden = true; }, 300);
-}
-document.getElementById("culture-btn").addEventListener("click", () => openCultureOverlay());
-document.getElementById("culture-close").addEventListener("click", closeCultureOverlay);
-cultureOverlay.addEventListener("click", (e) => { if (e.target === cultureOverlay) closeCultureOverlay(); });
-
-window.addEventListener("keydown", (e) => {
-  if (e.key !== "Escape") return;
-  if (!searchOverlay.hidden) closeSearch();
-  if (!cultureOverlay.hidden) closeCultureOverlay();
-});
-
 // test hook: exposes internals only when ?debug is present
 if (new URLSearchParams(location.search).has("debug")) {
-  window.__wcs = { markers, cultureMarkers, openPanel, openListPanel, openCultureOverlay, ARTISTS, CULTURE, camera, controls };
+  window.__wcs = { markers, openPanel, openListPanel, openCultureOverlay, ARTISTS, CULTURE, camera, controls };
 }
 
 window.addEventListener("resize", () => {
