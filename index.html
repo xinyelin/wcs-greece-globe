@@ -100,9 +100,61 @@
   }
   .diplomacy span{color:var(--mist);}
 
+  /* ---------- search ---------- */
+  .search-btn{
+    position:absolute;top:44px;right:52px;z-index:6;
+    width:46px;height:46px;border-radius:50%;
+    border:1px solid var(--hairline);background:rgba(9,16,26,0.5);
+    backdrop-filter:blur(6px);color:var(--gold);cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    transition:border-color .25s,background .25s;
+    animation:rise 1.2s .3s ease both;
+  }
+  .search-btn:hover,.search-btn:focus-visible{
+    border-color:var(--gold);background:rgba(212,180,131,0.12);
+  }
+  body.fallback-mode .search-btn{display:none;}
+  #search-overlay{
+    position:fixed;inset:0;z-index:40;
+    background:rgba(5,7,15,0.88);backdrop-filter:blur(12px);
+    display:flex;flex-direction:column;align-items:center;
+    padding:16vh 24px 40px;
+    opacity:0;transition:opacity .3s ease;
+  }
+  #search-overlay.open{opacity:1;}
+  #search-overlay[hidden]{display:none;} /* the display:flex above would otherwise defeat `hidden` */
+  .search-close{
+    position:absolute;top:36px;right:44px;
+    background:none;border:none;color:var(--mist);font-size:24px;
+    cursor:pointer;font-family:inherit;line-height:1;padding:8px;
+  }
+  .search-close:hover,.search-close:focus-visible{color:var(--gold);}
+  .search-box{width:min(560px,90vw);display:flex;flex-direction:column;}
+  #search-input{
+    width:100%;background:none;border:none;outline:none;
+    border-bottom:1px solid var(--gold-dim);
+    font-family:'Fraunces',Georgia,serif;font-weight:300;font-size:30px;
+    color:var(--marble);padding:10px 2px 14px;
+    transition:border-color .25s;
+  }
+  #search-input:focus{border-color:var(--gold);}
+  #search-input::placeholder{font-style:italic;color:var(--mist);opacity:0.55;}
+  .search-count{
+    margin-top:16px;font-size:10px;letter-spacing:0.3em;
+    text-transform:uppercase;color:var(--gold);min-height:14px;
+  }
+  .search-results{
+    margin-top:6px;overflow-y:auto;max-height:52vh;
+    display:flex;flex-direction:column;
+  }
+  .search-results::-webkit-scrollbar{width:5px;}
+  .search-results::-webkit-scrollbar-thumb{background:var(--gold-dim);border-radius:3px;}
+  .search-results .list-row{border-top:1px solid rgba(212,180,131,0.12);}
+  .search-results .list-row:last-child{border-bottom:1px solid rgba(212,180,131,0.12);}
+
   /* ---------- host ---------- */
   .host-card{
-    position:absolute;top:44px;right:52px;z-index:5;max-width:330px;
+    position:absolute;top:44px;right:122px;z-index:5;max-width:330px;
     text-align:right;animation:rise 1.2s .2s ease both;
   }
   .host-card .label{
@@ -313,7 +365,11 @@
     #fallback h1{font-size:38px;}
   }
   @media (max-width:700px){
-    .label-block{left:20px;right:20px;top:16px;max-width:none;}
+    .search-btn{top:16px;right:16px;width:42px;height:42px;}
+    .search-close{top:18px;right:16px;}
+    #search-overlay{padding-top:11vh;}
+    #search-input{font-size:22px;}
+    .label-block{left:20px;right:74px;top:16px;max-width:none;}
     .eyebrow{font-size:13px;letter-spacing:0.24em;}
     .eyebrow .salon{font-size:10px;letter-spacing:0.3em;margin-top:2px;}
     .chapter{font-size:13px;margin-top:10px;}
@@ -355,6 +411,22 @@
     <h1>Greece, <span class="accent">gathered</span></h1>
     <p class="dek">One hundred and ten artists from around the world, each answering the Greek spirit from where they stand. Every thread of light returns to Athens.</p>
     <div class="diplomacy">A Nonprofit for Cultural Diplomacy<br><span>Culture is not something to observe, but something to inhabit.</span></div>
+  </div>
+
+  <button class="search-btn" id="search-btn" aria-label="Search artists">
+    <svg width="19" height="19" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <circle cx="8.5" cy="8.5" r="6" stroke="currentColor" stroke-width="1.3"/>
+      <line x1="13.2" y1="13.2" x2="18" y2="18" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    </svg>
+  </button>
+
+  <div id="search-overlay" hidden>
+    <button class="search-close" id="search-close" aria-label="Close search">✕</button>
+    <div class="search-box">
+      <input id="search-input" type="text" placeholder="Search an artist, a work, a city…" autocomplete="off">
+      <div class="search-count" id="search-count"></div>
+      <div class="search-results" id="search-results"></div>
+    </div>
   </div>
 
   <div class="host-card">
@@ -981,6 +1053,78 @@ document.getElementById("panel-close").addEventListener("click", () => {
   controls.autoRotate = !REDUCED_MOTION;
 });
 
+// ---------- search ----------
+const searchOverlay = document.getElementById("search-overlay");
+const searchInput = document.getElementById("search-input");
+const searchCount = document.getElementById("search-count");
+const searchResults = document.getElementById("search-results");
+
+// the globe swings round so the chosen artist's light faces the viewer
+let flight = null;
+function flyToSprite(sprite) {
+  const target = controls.target.clone();
+  const world = sprite.getWorldPosition(new THREE.Vector3());
+  const dirTo = world.sub(target).normalize();
+  const dirFrom = camera.position.clone().sub(target).normalize();
+  const dist = camera.position.distanceTo(target);
+  if (REDUCED_MOTION) {
+    camera.position.copy(target).addScaledVector(dirTo, dist);
+    controls.update();
+    return;
+  }
+  flight = { dirFrom, dirTo, dist, target, t: 0 };
+}
+
+function openSearch() {
+  searchOverlay.hidden = false;
+  requestAnimationFrame(() => searchOverlay.classList.add("open"));
+  searchInput.value = "";
+  renderSearch("");
+  searchInput.focus();
+}
+function closeSearch() {
+  searchOverlay.classList.remove("open");
+  setTimeout(() => { searchOverlay.hidden = true; }, 300);
+}
+
+function renderSearch(q) {
+  q = q.trim().toLowerCase();
+  if (!q) {
+    searchCount.textContent = "Type to search " + ARTISTS.length + " artists";
+    searchResults.innerHTML = "";
+    return;
+  }
+  const hits = ARTISTS.filter(a =>
+    [a.name, a.title, a.location, a.medium].some(f => (f || "").toLowerCase().includes(q))
+  ).slice(0, 40);
+  searchCount.textContent = hits.length
+    ? hits.length + (hits.length === 1 ? " light found" : " lights found")
+    : "No lights found — try another name";
+  searchResults.innerHTML = hits.map(a => `
+    <button class="list-row" data-i="${a.index}">
+      <span class="lr-name">${esc(a.name)}</span>
+      <span class="lr-title">${esc(a.title || "Untitled")}</span>
+      <span class="lr-loc">${esc(a.location)} · ${esc(a.medium || "")}</span>
+    </button>`).join("");
+  searchResults.querySelectorAll(".list-row").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const artist = ARTISTS.find(x => x.index === Number(btn.dataset.i));
+      const sprite = markers.find(m => m.userData.index === artist.index);
+      closeSearch();
+      openPanel(artist, sprite);
+      if (sprite) flyToSprite(sprite);
+    });
+  });
+}
+
+document.getElementById("search-btn").addEventListener("click", openSearch);
+document.getElementById("search-close").addEventListener("click", closeSearch);
+searchOverlay.addEventListener("click", (e) => { if (e.target === searchOverlay) closeSearch(); });
+searchInput.addEventListener("input", () => renderSearch(searchInput.value));
+window.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !searchOverlay.hidden) closeSearch();
+});
+
 // test hook: exposes internals only when ?debug is present
 if (new URLSearchParams(location.search).has("debug")) {
   window.__wcs = { markers, openPanel, openListPanel, ARTISTS };
@@ -1023,6 +1167,20 @@ let shown = false;
       p.sprite.material.opacity = 0;
     }
   });
+
+  if (flight) {
+    flight.t += 0.022;
+    const e2 = flight.t < 0.5
+      ? 2 * flight.t * flight.t
+      : 1 - Math.pow(-2 * flight.t + 2, 2) / 2; // easeInOutQuad
+    // blend the two view directions on the sphere so the camera never cuts
+    // through the globe on its way to the far side
+    const dir = flight.dirFrom.clone().lerp(flight.dirTo, Math.min(e2, 1));
+    if (dir.lengthSq() < 0.001) dir.set(0, 1, 0); // antipodal guard
+    dir.normalize();
+    camera.position.copy(flight.target).addScaledVector(dir, flight.dist);
+    if (flight.t >= 1) flight = null;
+  }
 
   if (atmosphereMat) {
     sunDirView.copy(sun.position).normalize().transformDirection(camera.matrixWorldInverse);
