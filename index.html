@@ -100,7 +100,7 @@
   }
   .diplomacy span{color:var(--mist);}
 
-  /* ---------- search ---------- */
+  /* ---------- search & culture buttons ---------- */
   .search-btn{
     position:absolute;top:44px;right:52px;z-index:6;
     width:46px;height:46px;border-radius:50%;
@@ -113,23 +113,33 @@
   .search-btn:hover,.search-btn:focus-visible{
     border-color:var(--gold);background:rgba(212,180,131,0.12);
   }
+  .search-btn.culture-btn{right:110px;}
   body.fallback-mode .search-btn{display:none;}
-  #search-overlay{
+
+  /* ---------- shared full-screen overlay (search + explore-Greece) ---------- */
+  .overlay{
     position:fixed;inset:0;z-index:40;
     background:rgba(5,7,15,0.88);backdrop-filter:blur(12px);
     display:flex;flex-direction:column;align-items:center;
-    padding:16vh 24px 40px;
+    padding:14vh 24px 40px;overflow-y:auto;
     opacity:0;transition:opacity .3s ease;
   }
-  #search-overlay.open{opacity:1;}
-  #search-overlay[hidden]{display:none;} /* the display:flex above would otherwise defeat `hidden` */
-  .search-close{
-    position:absolute;top:36px;right:44px;
+  .overlay.open{opacity:1;}
+  .overlay[hidden]{display:none;} /* the display:flex above would otherwise defeat `hidden` */
+  .overlay-close{
+    position:fixed;top:36px;right:44px;
     background:none;border:none;color:var(--mist);font-size:24px;
     cursor:pointer;font-family:inherit;line-height:1;padding:8px;
   }
-  .search-close:hover,.search-close:focus-visible{color:var(--gold);}
-  .search-box{width:min(560px,90vw);display:flex;flex-direction:column;}
+  .overlay-close:hover,.overlay-close:focus-visible{color:var(--gold);}
+  .overlay-box{width:min(560px,90vw);display:flex;flex-direction:column;flex:none;}
+  .overlay-box.wide{width:min(640px,92vw);}
+  .overlay-eyebrow{font-size:11px;letter-spacing:0.32em;text-transform:uppercase;color:var(--gold);}
+  .overlay-title{
+    font-family:'Fraunces',Georgia,serif;font-weight:300;font-style:italic;
+    font-size:32px;color:var(--marble);margin-top:10px;line-height:1.15;
+  }
+  .overlay-sub{font-size:13px;line-height:1.6;color:var(--mist);margin-top:10px;max-width:46ch;}
   #search-input{
     width:100%;background:none;border:none;outline:none;
     border-bottom:1px solid var(--gold-dim);
@@ -149,12 +159,16 @@
   }
   .search-results::-webkit-scrollbar{width:5px;}
   .search-results::-webkit-scrollbar-thumb{background:var(--gold-dim);border-radius:3px;}
-  .search-results .list-row{border-top:1px solid rgba(212,180,131,0.12);}
-  .search-results .list-row:last-child{border-bottom:1px solid rgba(212,180,131,0.12);}
+  .search-results .list-row,#culture-list .list-row{border-top:1px solid rgba(212,180,131,0.12);}
+  .search-results .list-row:last-child,#culture-list .list-item:last-child .list-row{
+    border-bottom:1px solid rgba(212,180,131,0.12);
+  }
+  #culture-list{margin-top:22px;}
+  .lr-greek{font-style:italic;color:var(--gold);font-size:0.82em;margin-left:8px;font-weight:400;}
 
   /* ---------- host ---------- */
   .host-card{
-    position:absolute;top:44px;right:122px;z-index:5;max-width:330px;
+    position:absolute;top:44px;right:190px;z-index:5;max-width:300px;
     text-align:right;animation:rise 1.2s .2s ease both;
   }
   .host-card .label{
@@ -366,10 +380,12 @@
   }
   @media (max-width:700px){
     .search-btn{top:16px;right:16px;width:42px;height:42px;}
-    .search-close{top:18px;right:16px;}
-    #search-overlay{padding-top:11vh;}
+    .search-btn.culture-btn{right:66px;}
+    .overlay-close{top:18px;right:16px;}
+    .overlay{padding-top:11vh;}
+    .overlay-title{font-size:24px;}
     #search-input{font-size:22px;}
-    .label-block{left:20px;right:74px;top:16px;max-width:none;}
+    .label-block{left:20px;right:120px;top:16px;max-width:none;}
     .eyebrow{font-size:13px;letter-spacing:0.24em;}
     .eyebrow .salon{font-size:10px;letter-spacing:0.3em;margin-top:2px;}
     .chapter{font-size:13px;margin-top:10px;}
@@ -419,13 +435,31 @@
       <line x1="13.2" y1="13.2" x2="18" y2="18" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
     </svg>
   </button>
+  <button class="search-btn culture-btn" id="culture-btn" aria-label="Explore Greek culture">
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M6 20c2-6 2-11 0-16" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+      <path d="M18 20c-2-6-2-11 0-16" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+      <path d="M6 6c2 1 4 1 6 0M6 11c2 1 4 1 6 0M6 16c2 1 4 1 6 0" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/>
+      <path d="M18 6c-2 1-4 1-6 0M18 11c-2 1-4 1-6 0M18 16c-2 1-4 1-6 0" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/>
+    </svg>
+  </button>
 
-  <div id="search-overlay" hidden>
-    <button class="search-close" id="search-close" aria-label="Close search">✕</button>
-    <div class="search-box">
+  <div id="search-overlay" class="overlay" hidden>
+    <button class="overlay-close" id="search-close" aria-label="Close search">✕</button>
+    <div class="overlay-box">
       <input id="search-input" type="text" placeholder="Search an artist, a work, a city…" autocomplete="off">
       <div class="search-count" id="search-count"></div>
       <div class="search-results" id="search-results"></div>
+    </div>
+  </div>
+
+  <div id="culture-overlay" class="overlay" hidden>
+    <button class="overlay-close" id="culture-close" aria-label="Close">✕</button>
+    <div class="overlay-box wide">
+      <div class="overlay-eyebrow">The Greek Spirit</div>
+      <div class="overlay-title">Eight ideas that outlasted the myths</div>
+      <div class="overlay-sub">Words the Greeks kept because ordinary language wasn't enough — each one still standing somewhere on the map.</div>
+      <div class="list-rows" id="culture-list"></div>
     </div>
   </div>
 
@@ -506,6 +540,34 @@ const TEXTURE_SRC = GLOBE_MODE === "natural" ? "earth.jpg" : "earth-gilded.jpg";
 
 document.getElementById("stat-artists").textContent = ARTISTS.length;
 document.getElementById("stat-locations").textContent = new Set(ARTISTS.map(a => a.location)).size;
+
+// ---------- Greek culture: eight ideas, each grounded in a real place ----------
+const CULTURE = [
+  { key: "agora", term: "Agora", greek: "ἀγορά", place: "Athens", lat: 37.9755, lng: 23.7222,
+    oneLiner: "The square where a city argued itself into being.",
+    body: "Long before it meant “marketplace,” agora meant gathering — the open ground where citizens traded, debated, and voted. Democracy was not born in a text; it was born in this crowd, in the friction of people who disagreed and had nowhere else to go but toward each other." },
+  { key: "xenia", term: "Xenia", greek: "ξενία", place: "Ithaca", lat: 38.3910, lng: 20.7130,
+    oneLiner: "The sacred duty of host to guest, and guest to host.",
+    body: "In the ancient world, a stranger at the door might be a god in disguise. Xenia bound host and guest in mutual honor — shelter and food offered without question, hospitality repaid with respect. The custom outlived the myths; it still shapes how a table welcomes strangers today." },
+  { key: "kairos", term: "Kairos", greek: "καιρός", place: "Olympia", lat: 37.6386, lng: 21.6303,
+    oneLiner: "The right moment — not measured, but seized.",
+    body: "Where Chronos counted the hours, Kairos named the instant that mattered: the opening a runner could find, the pause before a decision. The Greeks kept two words for time because duration and opportunity are not the same thing — and a life is judged more by its kairos than its chronos." },
+  { key: "omphalos", term: "Omphalos", greek: "ὀμφαλός", place: "Delphi", lat: 38.4824, lng: 22.5010,
+    oneLiner: "The stone the Greeks called the navel of the world.",
+    body: "At Delphi, pilgrims believed they stood where two eagles sent by Zeus had met, marking the center of the earth. It was here the oracle spoke in riddles that kings crossed the Mediterranean to hear — proof that even a civilization built on reason left room for a mystery it never fully resolved." },
+  { key: "olive", term: "The Olive Branch", greek: "ἐλαία", place: "Kalamata", lat: 37.0389, lng: 22.1142,
+    oneLiner: "Athena's gift, carried ever since as a plea for peace.",
+    body: "Legend holds that Athena won the naming of her city by giving it the olive tree — food, oil, and wood in a single gift, one that takes years of patience to bear fruit. The branch became shorthand for peace precisely because peace, like the olive, rewards those willing to wait for it." },
+  { key: "symposium", term: "Symposium", greek: "συμπόσιον", place: "Corinth", lat: 37.9061, lng: 22.8781,
+    oneLiner: "To drink together — and, in doing so, to think together.",
+    body: "A symposium was never just a party. Wine loosened the room for poetry, argument, and confession, host and guests reclining as equals until dawn. The word survives in every academic conference today, though most have forgotten it once meant staying up all night for the sake of a good idea." },
+  { key: "philotimo", term: "Philotimo", greek: "φιλότιμο", place: "Thessaloniki", lat: 40.6401, lng: 22.9444,
+    oneLiner: "Love of honor — the debt owed to one's own community.",
+    body: "There is no exact translation for philotimo, which is itself telling. It names a private code: to act rightly not because you are watched, but because your people, living and dead, are owed your good name. It is generosity practiced as obligation, not performance." },
+  { key: "meraki", term: "Meraki", greek: "μεράκι", place: "Heraklion, Crete", lat: 35.3387, lng: 25.1442,
+    oneLiner: "To do something with soul, not obligation.",
+    body: "Meraki describes the extra hour spent on a dish no one asked for, the flourish in a letter meant to be read only once. It is creativity performed for its own sake — the same impulse that, this chapter, sent one hundred and ten artists toward a single word: Greece." },
+];
 
 // ---------- voting (shared by globe panel and fallback list) ----------
 const API_BASE = /vercel\.app$|^localhost$|^127\./.test(location.hostname) ? "" : "https://wcs-greece-globe.vercel.app";
@@ -671,6 +733,17 @@ controls.target.x = globe.position.x;
 controls.update();
 scene.add(globe);
 
+// Open on Greece, not wherever the coordinate system's front meridian happens to
+// face by default (that was the mid-Atlantic — fine for no chapter in particular,
+// wrong for this one). The chapter's whole story starts here.
+{
+  const frontDir = latLngToVector3(37.98, 23.73, 1);
+  const dist = cameraDistanceForAspect();
+  camera.position.copy(controls.target).addScaledVector(frontDir, dist);
+  camera.position.y += dist * 0.07;
+  controls.update();
+}
+
 if (USE_TEXTURE) {
   // The texture carries its own colour; tinting it only drains the photograph.
   const mat = new THREE.MeshPhongMaterial({
@@ -787,6 +860,106 @@ ARTISTS.forEach((artist) => {
   sprite.userData = artist;
   globe.add(sprite);
   markers.push(sprite);
+});
+
+// ---------- culture markers: eight small medallions across the mainland ----------
+function makeCultureIcon(key) {
+  const size = 128, c = document.createElement("canvas");
+  c.width = c.height = size;
+  const ctx = c.getContext("2d");
+  const cx = size / 2, cy = size / 2;
+
+  // a soft dark medallion behind every icon keeps it legible over both gold
+  // land and navy ocean
+  const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, size * 0.31);
+  g.addColorStop(0, "rgba(6,10,18,0.65)");
+  g.addColorStop(1, "rgba(6,10,18,0)");
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(cx, cy, size * 0.31, 0, Math.PI * 2); ctx.fill();
+
+  ctx.strokeStyle = "#ecd9ad";
+  ctx.lineWidth = 3.2;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  ctx.beginPath();
+  switch (key) {
+    case "agora": // doric column
+      ctx.moveTo(cx - 16, cy + 26); ctx.lineTo(cx - 16, cy - 18);
+      ctx.moveTo(cx + 16, cy + 26); ctx.lineTo(cx + 16, cy - 18);
+      ctx.moveTo(cx - 22, cy - 18); ctx.lineTo(cx + 22, cy - 18);
+      ctx.moveTo(cx - 26, cy + 26); ctx.lineTo(cx + 26, cy + 26);
+      break;
+    case "xenia": // open doorway
+      ctx.moveTo(cx - 18, cy + 24); ctx.lineTo(cx - 18, cy - 6);
+      ctx.arc(cx, cy - 6, 18, Math.PI, 0, false);
+      ctx.lineTo(cx + 18, cy + 24);
+      ctx.moveTo(cx - 24, cy + 26); ctx.lineTo(cx + 24, cy + 26);
+      break;
+    case "kairos": // hourglass
+      ctx.moveTo(cx - 16, cy - 22); ctx.lineTo(cx + 16, cy - 22); ctx.lineTo(cx, cy); ctx.closePath();
+      ctx.moveTo(cx - 16, cy + 22); ctx.lineTo(cx + 16, cy + 22); ctx.lineTo(cx, cy); ctx.closePath();
+      break;
+    case "omphalos": // carved dome stone
+      ctx.ellipse(cx, cy + 2, 17, 22, 0, 0, Math.PI * 2);
+      ctx.moveTo(cx - 10, cy - 4); ctx.quadraticCurveTo(cx, cy - 13, cx + 10, cy - 4);
+      ctx.moveTo(cx - 11, cy + 8); ctx.quadraticCurveTo(cx, cy + 17, cx + 11, cy + 8);
+      break;
+    case "olive": // curved branch, three leaves
+      ctx.moveTo(cx - 20, cy + 18); ctx.quadraticCurveTo(cx, cy - 6, cx + 20, cy - 20);
+      break;
+    case "symposium": // kylix cup
+      ctx.moveTo(cx - 20, cy - 8); ctx.quadraticCurveTo(cx, cy + 12, cx + 20, cy - 8);
+      ctx.moveTo(cx - 24, cy - 10); ctx.quadraticCurveTo(cx - 30, cy - 2, cx - 22, cy + 4);
+      ctx.moveTo(cx + 24, cy - 10); ctx.quadraticCurveTo(cx + 30, cy - 2, cx + 22, cy + 4);
+      ctx.moveTo(cx, cy + 11); ctx.lineTo(cx, cy + 21);
+      ctx.moveTo(cx - 14, cy + 23); ctx.lineTo(cx + 14, cy + 23);
+      break;
+    case "philotimo": // shield
+      ctx.moveTo(cx, cy - 22);
+      ctx.lineTo(cx + 18, cy - 14); ctx.lineTo(cx + 18, cy + 8);
+      ctx.quadraticCurveTo(cx + 18, cy + 22, cx, cy + 26);
+      ctx.quadraticCurveTo(cx - 18, cy + 22, cx - 18, cy + 8);
+      ctx.lineTo(cx - 18, cy - 14);
+      ctx.closePath();
+      ctx.moveTo(cx, cy - 18); ctx.lineTo(cx, cy + 20);
+      break;
+    case "meraki": // flame
+      ctx.moveTo(cx, cy - 24);
+      ctx.quadraticCurveTo(cx + 18, cy - 6, cx + 10, cy + 12);
+      ctx.quadraticCurveTo(cx + 4, cy + 24, cx, cy + 24);
+      ctx.quadraticCurveTo(cx - 4, cy + 24, cx - 10, cy + 12);
+      ctx.quadraticCurveTo(cx - 18, cy - 6, cx, cy - 24);
+      break;
+  }
+  ctx.stroke();
+
+  if (key === "olive") {
+    // leaves drawn as a separate pass so their own transforms don't disturb the branch path
+    [[-10, 10, -26], [2, -2, -18], [12, -12, -8]].forEach(([lx, ly, rot]) => {
+      ctx.save();
+      ctx.translate(cx + lx, cy + ly);
+      ctx.rotate(rot * Math.PI / 180);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 8, 3.4, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    });
+  }
+  return new THREE.CanvasTexture(c);
+}
+
+const cultureMarkers = [];
+CULTURE.forEach((c) => {
+  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: makeCultureIcon(c.key), transparent: true, depthWrite: false,
+  }));
+  sprite.position.copy(latLngToVector3(c.lat, c.lng, RADIUS * 1.02));
+  // several of these sit close together in real geography (Athens, Olympia,
+  // Delphi); a smaller mark keeps that cluster legible at close zoom
+  sprite.scale.set(0.15, 0.15, 0.15);
+  sprite.userData = c;
+  globe.add(sprite);
+  cultureMarkers.push(sprite);
 });
 
 // ---------- threads of light returning to Athens (one merged draw call) ----------
@@ -1022,6 +1195,13 @@ voteBtn.addEventListener("click", () => {
 renderer.domElement.addEventListener("click", (e) => {
   setMouse(e);
   raycaster.setFromCamera(mouse, camera);
+
+  const cultureHits = raycaster.intersectObjects(cultureMarkers);
+  if (cultureHits.length) {
+    openCultureOverlay(cultureHits[0].object.userData.key);
+    return;
+  }
+
   const hits = raycaster.intersectObjects(markers);
   if (!hits.length) return;
   // gather every light under the cursor on the near side of the globe
@@ -1043,7 +1223,8 @@ renderer.domElement.addEventListener("click", (e) => {
 renderer.domElement.addEventListener("pointermove", (e) => {
   setMouse(e);
   raycaster.setFromCamera(mouse, camera);
-  renderer.domElement.style.cursor = raycaster.intersectObjects(markers).length ? "pointer" : "grab";
+  const hovering = raycaster.intersectObjects(markers).length || raycaster.intersectObjects(cultureMarkers).length;
+  renderer.domElement.style.cursor = hovering ? "pointer" : "grab";
 });
 
 document.getElementById("panel-close").addEventListener("click", () => {
@@ -1121,13 +1302,75 @@ document.getElementById("search-btn").addEventListener("click", openSearch);
 document.getElementById("search-close").addEventListener("click", closeSearch);
 searchOverlay.addEventListener("click", (e) => { if (e.target === searchOverlay) closeSearch(); });
 searchInput.addEventListener("input", () => renderSearch(searchInput.value));
+
+// ---------- explore Greece: eight culture cards, same fold-in-place pattern as the gathering list ----------
+const cultureOverlay = document.getElementById("culture-overlay");
+const cultureList = document.getElementById("culture-list");
+
+function renderCultureList(expandKey) {
+  cultureList.innerHTML = CULTURE.map(c => `
+    <div class="list-item" data-key="${c.key}">
+      <button class="list-row" aria-expanded="false">
+        <span class="lr-name">${esc(c.term)}<em class="lr-greek">${c.greek}</em></span>
+        <span class="lr-title">${esc(c.oneLiner)}</span>
+        <span class="lr-loc">${esc(c.place)}, Greece</span>
+        <span class="lr-chevron" aria-hidden="true">＋</span>
+      </button>
+      <div class="row-detail"><div class="row-detail-inner"></div></div>
+    </div>`).join("");
+
+  let openItem = null;
+  cultureList.querySelectorAll(".list-item").forEach(item => {
+    const btn = item.querySelector(".list-row");
+    const c = CULTURE.find(x => x.key === item.dataset.key);
+    btn.addEventListener("click", () => {
+      if (openItem === item) {
+        item.classList.remove("open");
+        btn.setAttribute("aria-expanded", "false");
+        openItem = null;
+        return;
+      }
+      if (openItem) {
+        openItem.classList.remove("open");
+        openItem.querySelector(".list-row").setAttribute("aria-expanded", "false");
+      }
+      const inner = item.querySelector(".row-detail-inner");
+      if (!inner.innerHTML) inner.innerHTML = `<div class="panel-bio">${esc(c.body)}</div>`;
+      item.classList.add("open");
+      btn.setAttribute("aria-expanded", "true");
+      openItem = item;
+      setTimeout(() => btn.scrollIntoView({ behavior: "smooth", block: "start" }), 200);
+    });
+  });
+
+  if (expandKey) {
+    const item = cultureList.querySelector(`.list-item[data-key="${expandKey}"]`);
+    if (item) item.querySelector(".list-row").click();
+  }
+}
+
+function openCultureOverlay(expandKey) {
+  renderCultureList(expandKey);
+  cultureOverlay.hidden = false;
+  requestAnimationFrame(() => cultureOverlay.classList.add("open"));
+}
+function closeCultureOverlay() {
+  cultureOverlay.classList.remove("open");
+  setTimeout(() => { cultureOverlay.hidden = true; }, 300);
+}
+document.getElementById("culture-btn").addEventListener("click", () => openCultureOverlay());
+document.getElementById("culture-close").addEventListener("click", closeCultureOverlay);
+cultureOverlay.addEventListener("click", (e) => { if (e.target === cultureOverlay) closeCultureOverlay(); });
+
 window.addEventListener("keydown", (e) => {
-  if (e.key === "Escape" && !searchOverlay.hidden) closeSearch();
+  if (e.key !== "Escape") return;
+  if (!searchOverlay.hidden) closeSearch();
+  if (!cultureOverlay.hidden) closeCultureOverlay();
 });
 
 // test hook: exposes internals only when ?debug is present
 if (new URLSearchParams(location.search).has("debug")) {
-  window.__wcs = { markers, openPanel, openListPanel, ARTISTS };
+  window.__wcs = { markers, cultureMarkers, openPanel, openListPanel, openCultureOverlay, ARTISTS, CULTURE, camera, controls };
 }
 
 window.addEventListener("resize", () => {
