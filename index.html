@@ -182,28 +182,45 @@
   .panel-eyebrow{
     font-size:10px;letter-spacing:0.32em;text-transform:uppercase;color:var(--gold);margin-top:4px;
   }
-  .panel-back{
-    align-self:flex-start;background:none;border:none;cursor:pointer;
-    font-family:inherit;font-size:10.5px;letter-spacing:0.22em;text-transform:uppercase;
-    color:var(--mist);padding:2px 0;transition:color .2s;
-  }
-  .panel-back:hover,.panel-back:focus-visible{color:var(--gold);}
   .list-rows{display:flex;flex-direction:column;margin-top:6px;}
+  .list-item{border-top:1px solid rgba(212,180,131,0.12);}
+  .list-item:last-child{border-bottom:1px solid rgba(212,180,131,0.12);}
   .list-row{
-    background:none;border:none;border-top:1px solid rgba(212,180,131,0.12);
+    width:100%;background:none;border:none;
     cursor:pointer;text-align:left;font-family:inherit;
     padding:15px 4px;display:flex;flex-direction:column;gap:3px;
-    transition:background .2s;
+    position:relative;transition:background .2s;
   }
-  .list-row:last-child{border-bottom:1px solid rgba(212,180,131,0.12);}
   .list-row:hover,.list-row:focus-visible{background:rgba(212,180,131,0.07);}
   .list-row .lr-name{
     font-family:'Fraunces',Georgia,serif;font-weight:300;font-size:19px;color:var(--marble);
+    padding-right:26px;
   }
   .list-row .lr-title{
     font-family:'Fraunces',Georgia,serif;font-style:italic;font-size:13px;color:var(--mist);
   }
   .list-row .lr-loc{font-size:10.5px;letter-spacing:0.08em;color:var(--mist);opacity:0.75;}
+  .list-row .lr-chevron{
+    position:absolute;top:19px;right:6px;
+    color:var(--gold);font-size:13px;line-height:1;
+    transition:transform .35s ease;
+  }
+  .list-item.open .lr-chevron{transform:rotate(45deg);}
+  .list-item.open>.list-row{background:rgba(212,180,131,0.06);}
+  /* inline detail expands right under its name; 0fr -> 1fr animates the height */
+  .row-detail{
+    display:grid;grid-template-rows:0fr;
+    transition:grid-template-rows .45s cubic-bezier(.22,.8,.3,1);
+  }
+  .list-item.open>.row-detail{grid-template-rows:1fr;}
+  .row-detail-inner{
+    overflow:hidden;min-height:0;
+    display:flex;flex-direction:column;gap:12px;
+  }
+  .row-detail-inner>:first-child{margin-top:4px;}
+  .row-detail-inner>:last-child{margin-bottom:18px;}
+  .artwork.mini{min-height:110px;padding:18px;}
+  .artwork.mini .title{font-size:20px;}
   .panel-name{
     font-family:'Fraunces',Georgia,serif;font-weight:300;font-size:32px;line-height:1.1;color:var(--marble);
   }
@@ -369,7 +386,6 @@
     </div>
 
     <div id="panel-detail">
-      <button class="panel-back" id="panel-back" hidden>← Back to this gathering</button>
       <div class="artwork">
         <div class="title" id="panel-title"></div>
         <div class="medium" id="panel-medium"></div>
@@ -803,11 +819,40 @@ function clearActive() {
 
 const listWrap = document.getElementById("panel-list");
 const detailWrap = document.getElementById("panel-detail");
-const backBtn = document.getElementById("panel-back");
-let currentGathering = null;
+
+// lights up an artist's marker and their thread home, without touching the panel
+function spotlightArtist(sprite) {
+  clearActive();
+  activeMarker = sprite;
+  sprite.scale.set(MARKER_ACTIVE, MARKER_ACTIVE, MARKER_ACTIVE);
+  const curve = arcCurves.get(sprite);
+  if (curve) {
+    highlight.geometry.dispose();
+    highlight.geometry = new THREE.BufferGeometry().setFromPoints(curve.getPoints(48));
+    highlight.visible = true;
+  }
+}
+
+function inlineDetailHTML(a) {
+  const statement = a.statement ? `
+    <div class="panel-section-label">On the Greek Spirit</div>
+    <div class="panel-bio">${esc(a.statement)}</div>` : "";
+  return `
+    <div class="artwork mini">
+      <div class="title">${esc(a.title || "Untitled")}</div>
+      <div class="medium">${esc(a.medium || "")}</div>
+    </div>
+    <div class="panel-links">
+      ${linkBtn(a.artworkLink, "View artwork ↗", true)}
+      ${linkBtn(a.website, "Portfolio")}
+      ${linkBtn(socialUrl(a.social), "Social")}
+    </div>
+    <button class="vote-btn" data-artist="${a.index}">${voteLabel(a.index)}</button>
+    <div class="panel-section-label">Artist</div>
+    <div class="panel-bio">${esc(a.bio || "—")}</div>${statement}`;
+}
 
 function openListPanel(items) {
-  currentGathering = items;
   clearActive();
 
   const locs = new Set(items.map(a => a.location));
@@ -815,18 +860,50 @@ function openListPanel(items) {
     locs.size === 1 ? items[0].location : items[0].location + " & nearby";
   document.getElementById("list-count").textContent =
     items.length + " artists shine here — choose one to meet";
+
   const rows = document.getElementById("list-rows");
   rows.innerHTML = items.map(a => `
-    <button class="list-row" data-i="${a.index}">
-      <span class="lr-name">${esc(a.name)}</span>
-      <span class="lr-title">${esc(a.title || "Untitled")}</span>
-      <span class="lr-loc">${esc(a.location)}</span>
-    </button>`).join("");
-  rows.querySelectorAll(".list-row").forEach(btn => {
+    <div class="list-item" data-i="${a.index}">
+      <button class="list-row" aria-expanded="false">
+        <span class="lr-name">${esc(a.name)}</span>
+        <span class="lr-title">${esc(a.title || "Untitled")}</span>
+        <span class="lr-loc">${esc(a.location)}</span>
+        <span class="lr-chevron" aria-hidden="true">＋</span>
+      </button>
+      <div class="row-detail"><div class="row-detail-inner"></div></div>
+    </div>`).join("");
+
+  let openItem = null;
+  rows.querySelectorAll(".list-item").forEach(item => {
+    const btn = item.querySelector(".list-row");
     btn.addEventListener("click", () => {
-      const artist = ARTISTS.find(x => x.index === Number(btn.dataset.i));
+      // a second tap on the open artist folds them away again
+      if (openItem === item) {
+        item.classList.remove("open");
+        btn.setAttribute("aria-expanded", "false");
+        openItem = null;
+        clearActive();
+        return;
+      }
+      if (openItem) {
+        openItem.classList.remove("open");
+        openItem.querySelector(".list-row").setAttribute("aria-expanded", "false");
+      }
+      const artist = ARTISTS.find(x => x.index === Number(item.dataset.i));
+      const inner = item.querySelector(".row-detail-inner");
+      if (!inner.innerHTML) {
+        inner.innerHTML = inlineDetailHTML(artist);
+        const vb = inner.querySelector(".vote-btn");
+        vb.classList.toggle("voted", votedSet.has(artist.index));
+        vb.addEventListener("click", () => submitVote(vb, artist.index));
+      }
+      item.classList.add("open");
+      btn.setAttribute("aria-expanded", "true");
+      openItem = item;
       const sprite = markers.find(m => m.userData.index === artist.index);
-      openPanel(artist, sprite, true);
+      if (sprite) spotlightArtist(sprite);
+      // keep the tapped name in sight while its detail unfolds beneath it
+      setTimeout(() => btn.scrollIntoView({ behavior: "smooth", block: "start" }), 200);
     });
   });
 
@@ -837,25 +914,11 @@ function openListPanel(items) {
   controls.autoRotate = false;
 }
 
-backBtn.addEventListener("click", () => {
-  if (currentGathering) openListPanel(currentGathering);
-});
-
-function openPanel(artist, sprite, fromGathering) {
-  clearActive();
-  activeMarker = sprite;
-  sprite.scale.set(MARKER_ACTIVE, MARKER_ACTIVE, MARKER_ACTIVE);
-
-  const curve = arcCurves.get(sprite);
-  if (curve) {
-    highlight.geometry.dispose();
-    highlight.geometry = new THREE.BufferGeometry().setFromPoints(curve.getPoints(48));
-    highlight.visible = true;
-  }
+function openPanel(artist, sprite) {
+  spotlightArtist(sprite);
 
   listWrap.hidden = true;
   detailWrap.hidden = false;
-  backBtn.hidden = !fromGathering;
 
   document.getElementById("panel-title").textContent = artist.title || "Untitled";
   document.getElementById("panel-medium").textContent = artist.medium || "";
@@ -915,7 +978,6 @@ document.getElementById("panel-close").addEventListener("click", () => {
   panel.classList.remove("open");
   clearActive();
   currentArtist = null;
-  currentGathering = null;
   controls.autoRotate = !REDUCED_MOTION;
 });
 
