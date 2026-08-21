@@ -1,0 +1,1384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>World Culture Salon · Chapter I — Greece | One Culture Foundation</title>
+<meta name="description" content="One hundred and ten artists from around the world in conversation with the Greek spirit. An interactive gallery by One Culture Foundation.">
+<link rel="stylesheet" href="fonts.css">
+<style>
+  :root{
+    --void:#05070f;
+    --nebula-violet:#241a4d;
+    --nebula-blue:#0c2038;
+    --aegean:#7fb3d9;
+    --gold:#d4b483;
+    --gold-dim:rgba(212,180,131,0.35);
+    --marble:#f5f1e8;
+    --mist:#93a5bd;
+    --hairline:rgba(212,180,131,0.22);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;overflow:hidden;}
+  body{
+    background:var(--void);
+    color:var(--marble);
+    font-family:'Jost','Avenir Next','Segoe UI',sans-serif;
+    font-weight:300;
+  }
+  body.fallback-mode{overflow:auto;height:auto;}
+  /* one hue family only — deep aegean, kept to the far corners so the centre stays black */
+  body::before{
+    content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+    background:
+      radial-gradient(ellipse 46% 38% at 92% 6%, rgba(26,54,104,0.20), transparent 60%),
+      radial-gradient(ellipse 44% 40% at 5% 96%, rgba(16,46,84,0.18), transparent 60%),
+      var(--void);
+  }
+  #app{position:relative;width:100vw;height:100vh;z-index:1;}
+  body.fallback-mode #app{height:auto;min-height:100vh;}
+  @supports (height:100dvh){ #app{height:100dvh;} }
+  #globe-canvas{position:absolute;inset:0;}
+
+  /* ---------- loading ---------- */
+  #loading{
+    position:fixed;inset:0;z-index:20;display:flex;
+    flex-direction:column;align-items:center;justify-content:center;gap:18px;
+    background:var(--void);transition:opacity .6s ease;
+  }
+  #loading.done{opacity:0;pointer-events:none;}
+  #loading .mark{
+    font-family:'Fraunces',Georgia,serif;font-style:italic;font-weight:300;
+    font-size:26px;color:var(--gold);
+  }
+  #loading .bar{width:150px;height:1px;background:rgba(212,180,131,0.18);overflow:hidden;}
+  #loading .bar i{
+    display:block;height:100%;width:40%;background:var(--gold);
+    animation:sweep 1.3s ease-in-out infinite;
+  }
+  @keyframes sweep{0%{transform:translateX(-100%);}100%{transform:translateX(350%);}}
+
+  /* ---------- museum wall label ---------- */
+  .label-block{
+    position:absolute;top:44px;left:52px;z-index:5;max-width:430px;
+    animation:rise 1.2s ease both;
+  }
+  .eyebrow{
+    font-size:17px;letter-spacing:0.3em;text-transform:uppercase;
+    color:var(--gold);font-weight:500;line-height:1.5;
+  }
+  .eyebrow a{
+    color:var(--gold);text-decoration:none;
+    border-bottom:1px solid transparent;padding-bottom:2px;
+    transition:border-color .25s,color .25s;
+  }
+  .eyebrow a:hover,.eyebrow a:focus-visible{
+    color:#e3c795;border-bottom-color:var(--gold-dim);
+  }
+  .eyebrow .salon{
+    display:block;font-size:12.5px;letter-spacing:0.42em;
+    color:var(--mist);font-weight:400;margin-top:4px;
+  }
+  .chapter{
+    font-family:'Fraunces',Georgia,serif;font-style:italic;font-weight:300;
+    font-size:20px;color:var(--mist);margin-top:22px;
+  }
+  h1{
+    font-family:'Fraunces',Georgia,serif;font-weight:300;
+    font-size:76px;line-height:1;letter-spacing:0.01em;
+    color:var(--marble);margin-top:2px;
+  }
+  h1 .accent{color:var(--gold);font-style:italic;}
+  .dek{
+    margin-top:16px;font-size:14.5px;line-height:1.65;color:var(--mist);
+    font-weight:300;letter-spacing:0.02em;max-width:360px;
+  }
+  .diplomacy{
+    margin-top:22px;padding-top:16px;border-top:1px solid var(--hairline);
+    font-size:11px;letter-spacing:0.28em;text-transform:uppercase;
+    color:var(--gold);font-weight:400;line-height:2;
+  }
+  .diplomacy span{color:var(--mist);}
+
+  /* ---------- search & culture buttons ---------- */
+  .search-btn{
+    position:absolute;top:44px;right:52px;z-index:6;
+    width:46px;height:46px;border-radius:50%;
+    border:1px solid var(--hairline);background:rgba(9,16,26,0.5);
+    backdrop-filter:blur(6px);color:var(--gold);cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    transition:border-color .25s,background .25s;
+    animation:rise 1.2s .3s ease both;
+  }
+  .search-btn:hover,.search-btn:focus-visible{
+    border-color:var(--gold);background:rgba(212,180,131,0.12);
+  }
+  /* the culture rail (below) is the desktop entry point; this button only
+     resurfaces on narrow screens where a fixed rail has nowhere to sit */
+  .search-btn.culture-btn{right:110px;display:none;}
+  body.fallback-mode .search-btn{display:none;}
+
+  /* ---------- culture rail: a quiet spine of Greek ideas, off the globe entirely ---------- */
+  /* the right edge only has the search button above and the mission line
+     below, both short and fixed-height, so a modest fixed clearance clears
+     them at any realistic viewport height. overflow is left visible (no
+     scroll clipping) because the flyout labels below need to escape the
+     rail's own box to the left without being cut off. */
+  .culture-rail{
+    position:absolute;right:52px;top:130px;bottom:130px;z-index:5;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:10px;padding:6px 2px;
+    animation:rise 1.2s .4s ease both;
+  }
+  .rail-item{
+    position:relative;width:34px;height:34px;border-radius:50%;flex:none;
+    border:1px solid var(--hairline);background:rgba(9,16,26,0.45);
+    backdrop-filter:blur(4px);color:var(--gold);cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    transition:border-color .25s,background .25s,transform .25s;
+  }
+  .rail-item svg{width:15px;height:15px;overflow:visible;}
+  .rail-item:hover,.rail-item:focus-visible{
+    border-color:var(--gold);background:rgba(212,180,131,0.14);transform:scale(1.08);
+  }
+  .rail-flyout{
+    position:absolute;right:52px;top:50%;transform:translateY(-50%) translateX(6px);
+    white-space:nowrap;pointer-events:none;text-align:right;
+    background:rgba(9,16,26,0.92);border:1px solid var(--hairline);border-radius:3px;
+    padding:9px 16px;opacity:0;transition:opacity .2s,transform .2s;
+  }
+  .rail-flyout b{
+    font-family:'Fraunces',Georgia,serif;font-weight:400;font-size:14px;color:var(--marble);
+  }
+  .rail-flyout i{font-style:italic;color:var(--gold);font-size:12px;margin-left:8px;}
+  .rail-item:hover .rail-flyout,.rail-item:focus-visible .rail-flyout{
+    opacity:1;transform:translateY(-50%) translateX(0);
+  }
+  body.fallback-mode .culture-rail{display:none;}
+
+  /* ---------- shared full-screen overlay (search + explore-Greece) ---------- */
+  .overlay{
+    position:fixed;inset:0;z-index:40;
+    background:rgba(5,7,15,0.88);backdrop-filter:blur(12px);
+    display:flex;flex-direction:column;align-items:center;
+    padding:14vh 24px 40px;overflow-y:auto;
+    opacity:0;transition:opacity .3s ease;
+  }
+  .overlay.open{opacity:1;}
+  .overlay[hidden]{display:none;} /* the display:flex above would otherwise defeat `hidden` */
+  .overlay-close{
+    position:fixed;top:36px;right:44px;
+    background:none;border:none;color:var(--mist);font-size:24px;
+    cursor:pointer;font-family:inherit;line-height:1;padding:8px;
+  }
+  .overlay-close:hover,.overlay-close:focus-visible{color:var(--gold);}
+  .overlay-box{width:min(560px,90vw);display:flex;flex-direction:column;flex:none;}
+  .overlay-box.wide{width:min(640px,92vw);}
+  .overlay-eyebrow{font-size:11px;letter-spacing:0.32em;text-transform:uppercase;color:var(--gold);}
+  .overlay-title{
+    font-family:'Fraunces',Georgia,serif;font-weight:300;font-style:italic;
+    font-size:32px;color:var(--marble);margin-top:10px;line-height:1.15;
+  }
+  .overlay-sub{font-size:13px;line-height:1.6;color:var(--mist);margin-top:10px;max-width:46ch;}
+  #search-input{
+    width:100%;background:none;border:none;outline:none;
+    border-bottom:1px solid var(--gold-dim);
+    font-family:'Fraunces',Georgia,serif;font-weight:300;font-size:30px;
+    color:var(--marble);padding:10px 2px 14px;
+    transition:border-color .25s;
+  }
+  #search-input:focus{border-color:var(--gold);}
+  #search-input::placeholder{font-style:italic;color:var(--mist);opacity:0.55;}
+  .search-count{
+    margin-top:16px;font-size:10px;letter-spacing:0.3em;
+    text-transform:uppercase;color:var(--gold);min-height:14px;
+  }
+  .search-results{
+    margin-top:6px;overflow-y:auto;max-height:52vh;
+    display:flex;flex-direction:column;
+  }
+  .search-results::-webkit-scrollbar{width:5px;}
+  .search-results::-webkit-scrollbar-thumb{background:var(--gold-dim);border-radius:3px;}
+  .search-results .list-row,#culture-list .list-row{border-top:1px solid rgba(212,180,131,0.12);}
+  .search-results .list-row:last-child,#culture-list .list-item:last-child .list-row{
+    border-bottom:1px solid rgba(212,180,131,0.12);
+  }
+  #culture-list{margin-top:22px;}
+  .lr-greek{font-style:italic;color:var(--gold);font-size:0.82em;margin-left:8px;font-weight:400;}
+
+  /* ---------- stats + legend ---------- */
+  .meta-block{position:absolute;bottom:40px;left:52px;z-index:5;animation:rise 1.2s .35s ease both;}
+  .stats{display:flex;gap:36px;}
+  .stat b{
+    display:block;font-family:'Fraunces',Georgia,serif;font-weight:300;
+    font-size:34px;color:var(--marble);line-height:1;
+  }
+  .stat span{
+    display:block;margin-top:6px;font-size:10px;letter-spacing:0.3em;
+    text-transform:uppercase;color:var(--mist);
+  }
+  .hint{
+    position:absolute;bottom:40px;left:50%;z-index:5;
+    font-size:11px;letter-spacing:0.24em;text-transform:uppercase;color:var(--mist);
+    opacity:0.8;animation:riseCentered 1.2s .5s ease both;white-space:nowrap;
+  }
+  .mission{
+    position:absolute;bottom:40px;right:52px;z-index:5;max-width:250px;text-align:right;
+    font-family:'Fraunces',Georgia,serif;font-style:italic;font-weight:300;
+    font-size:14px;line-height:1.7;color:var(--mist);
+    animation:rise 1.2s .5s ease both;
+  }
+
+  /* ---------- artist panel ---------- */
+  #artist-panel{
+    position:absolute;top:0;right:0;height:100%;width:400px;z-index:10;
+    background:linear-gradient(200deg, rgba(14,16,30,0.92), rgba(5,7,15,0.96));
+    border-left:1px solid var(--hairline);
+    backdrop-filter:blur(14px);
+    transform:translateX(100%);transition:transform .45s cubic-bezier(.22,.8,.3,1);
+    padding:30px 34px 44px;display:flex;flex-direction:column;gap:14px;
+    overflow-y:auto;
+  }
+  #artist-panel.open{transform:translateX(0);}
+  #artist-panel::-webkit-scrollbar{width:5px;}
+  #artist-panel::-webkit-scrollbar-thumb{background:var(--gold-dim);border-radius:3px;}
+  .panel-close{
+    align-self:flex-end;background:none;border:none;color:var(--mist);
+    font-size:22px;cursor:pointer;line-height:1;flex:none;font-family:inherit;
+  }
+  .panel-close:hover,.panel-close:focus-visible{color:var(--gold);}
+  .artwork{
+    width:100%;min-height:170px;border-radius:2px;flex:none;
+    border:1px solid var(--hairline);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
+    padding:24px;text-align:center;position:relative;overflow:hidden;
+  }
+  .artwork::after{
+    content:"";position:absolute;inset:0;
+    background:radial-gradient(ellipse at 50% 120%, rgba(212,180,131,0.14), transparent 60%);
+    pointer-events:none;
+  }
+  .artwork .title{
+    font-family:'Fraunces',Georgia,serif;font-weight:400;font-style:italic;
+    font-size:24px;line-height:1.25;color:var(--marble);
+  }
+  .artwork .medium{
+    font-size:10px;letter-spacing:0.32em;text-transform:uppercase;color:var(--gold);
+  }
+  #panel-detail,#panel-list{display:flex;flex-direction:column;gap:14px;}
+  .panel-eyebrow{
+    font-size:10px;letter-spacing:0.32em;text-transform:uppercase;color:var(--gold);margin-top:4px;
+  }
+  .list-rows{display:flex;flex-direction:column;margin-top:6px;}
+  .list-item{border-top:1px solid rgba(212,180,131,0.12);}
+  .list-item:last-child{border-bottom:1px solid rgba(212,180,131,0.12);}
+  .list-row{
+    width:100%;background:none;border:none;
+    cursor:pointer;text-align:left;font-family:inherit;
+    padding:15px 4px;display:flex;flex-direction:column;gap:3px;
+    position:relative;transition:background .2s;
+  }
+  .list-row:hover,.list-row:focus-visible{background:rgba(212,180,131,0.07);}
+  .list-row .lr-name{
+    font-family:'Fraunces',Georgia,serif;font-weight:300;font-size:19px;color:var(--marble);
+    padding-right:26px;
+  }
+  .list-row .lr-title{
+    font-family:'Fraunces',Georgia,serif;font-style:italic;font-size:13px;color:var(--mist);
+  }
+  .list-row .lr-loc{font-size:10.5px;letter-spacing:0.08em;color:var(--mist);opacity:0.75;}
+  .list-row .lr-chevron{
+    position:absolute;top:19px;right:6px;
+    color:var(--gold);font-size:13px;line-height:1;
+    transition:transform .35s ease;
+  }
+  .list-item.open .lr-chevron{transform:rotate(45deg);}
+  .list-item.open>.list-row{background:rgba(212,180,131,0.06);}
+  /* inline detail expands right under its name; 0fr -> 1fr animates the height */
+  .row-detail{
+    display:grid;grid-template-rows:0fr;
+    transition:grid-template-rows .45s cubic-bezier(.22,.8,.3,1);
+  }
+  .list-item.open>.row-detail{grid-template-rows:1fr;}
+  .row-detail-inner{
+    overflow:hidden;min-height:0;
+    display:flex;flex-direction:column;gap:12px;
+  }
+  .row-detail-inner>:first-child{margin-top:4px;}
+  .row-detail-inner>:last-child{margin-bottom:18px;}
+  .artwork.mini{min-height:110px;padding:18px;}
+  .artwork.mini .title{font-size:20px;}
+  .panel-name{
+    font-family:'Fraunces',Georgia,serif;font-weight:300;font-size:32px;line-height:1.1;color:var(--marble);
+  }
+  .panel-country{font-size:12.5px;letter-spacing:0.08em;color:var(--mist);}
+  .panel-links{display:flex;flex-wrap:wrap;gap:9px;margin-top:4px;}
+  .panel-links a{
+    font-size:10px;letter-spacing:0.22em;text-transform:uppercase;text-decoration:none;
+    color:var(--gold);border:1px solid var(--gold-dim);
+    padding:8px 14px;transition:background .2s,color .2s;font-weight:400;
+  }
+  .panel-links a:hover,.panel-links a:focus-visible{background:rgba(212,180,131,0.12);}
+  .panel-links a.primary{background:var(--gold);color:#171008;font-weight:500;}
+  .panel-links a.primary:hover,.panel-links a.primary:focus-visible{background:#e3c795;}
+  .vote-btn{
+    margin-top:6px;width:100%;padding:13px 16px;cursor:pointer;
+    background:none;border:1px solid var(--gold);color:var(--gold);
+    font-family:inherit;font-weight:500;font-size:11px;
+    letter-spacing:0.26em;text-transform:uppercase;
+    transition:background .25s,color .25s,border-color .25s;
+  }
+  .vote-btn:hover:not(:disabled),.vote-btn:focus-visible:not(:disabled){background:rgba(212,180,131,0.14);}
+  .vote-btn:disabled{cursor:default;}
+  .vote-btn.voted{background:var(--gold);color:#171008;border-color:var(--gold);}
+  .vote-btn.voted .undo-hint{display:none;font-weight:400;}
+  .vote-btn.voted:hover .default-text,.vote-btn.voted:focus-visible .default-text{display:none;}
+  .vote-btn.voted:hover .undo-hint,.vote-btn.voted:focus-visible .undo-hint{display:inline;}
+  .vote-btn.voted:hover,.vote-btn.voted:focus-visible{background:none;color:var(--gold);}
+  .panel-section-label{
+    font-size:10px;letter-spacing:0.32em;text-transform:uppercase;color:var(--mist);
+    margin-top:10px;padding-top:14px;border-top:1px solid rgba(212,180,131,0.12);
+  }
+  .panel-bio{font-size:13px;line-height:1.75;color:#c3cdd9;font-weight:300;}
+
+  /* ---------- no-WebGL fallback ---------- */
+  #fallback{display:none;position:relative;z-index:2;padding:56px 52px 80px;}
+  body.fallback-mode #fallback{display:block;}
+  body.fallback-mode .label-block,
+  body.fallback-mode .meta-block,
+  body.fallback-mode .hint,
+  body.fallback-mode .mission,
+  body.fallback-mode #globe-canvas{display:none;}
+  #fallback .fb-head{max-width:760px;margin-bottom:10px;}
+  #fallback .fb-note{
+    margin-top:18px;padding:14px 18px;border:1px solid var(--hairline);
+    font-size:12.5px;line-height:1.7;color:var(--mist);max-width:640px;
+  }
+  #fallback h1{font-size:56px;margin-top:6px;}
+  .fb-grid{
+    display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+    gap:1px;background:rgba(212,180,131,0.14);margin-top:44px;
+    border:1px solid rgba(212,180,131,0.14);
+  }
+  .fb-card{background:#080b15;padding:22px 24px 24px;display:flex;flex-direction:column;gap:7px;}
+  .fb-card .idx{font-size:9.5px;letter-spacing:0.3em;text-transform:uppercase;color:var(--gold);}
+  .fb-card .nm{font-family:'Fraunces',Georgia,serif;font-size:22px;font-weight:300;line-height:1.2;}
+  .fb-card .loc{font-size:11.5px;color:var(--mist);letter-spacing:0.05em;}
+  .fb-card .ttl{font-family:'Fraunces',Georgia,serif;font-style:italic;font-size:15px;color:#c3cdd9;margin-top:4px;}
+  .fb-card .med{font-size:9.5px;letter-spacing:0.28em;text-transform:uppercase;color:var(--gold);opacity:0.8;}
+  .fb-card .lk{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;}
+  .fb-card .lk a{
+    font-size:9.5px;letter-spacing:0.2em;text-transform:uppercase;text-decoration:none;
+    color:var(--gold);border:1px solid var(--gold-dim);padding:6px 11px;
+  }
+  .fb-card .lk a:hover{background:rgba(212,180,131,0.12);}
+  .fb-card .vote-btn{margin-top:10px;padding:11px 12px;letter-spacing:0.2em;}
+
+  @keyframes rise{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+  /* keeps the horizontal centering the rise animation would otherwise overwrite */
+  @keyframes riseCentered{
+    from{opacity:0;transform:translateX(-50%) translateY(14px);}
+    to{opacity:0.8;transform:translateX(-50%) translateY(0);}
+  }
+  /* the centered hint owns the bottom edge; decorative neighbours yield when space runs out */
+  @media (max-width:1200px){ .mission{display:none;} }
+  /* too narrow for the hint to clear the stats sideways, so lift it clear instead */
+  @media (min-width:901px) and (max-width:1250px){ .hint{bottom:104px;} }
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none !important;transition:none !important;}
+  }
+  @media (max-width:900px){
+    .culture-rail{display:none;}
+    .search-btn.culture-btn{display:flex;}
+    .label-block{left:24px;top:24px;max-width:300px;}
+    h1{font-size:48px;}
+    .meta-block{left:24px;bottom:24px;}
+    .mission,.hint{display:none;}
+    #artist-panel{width:100%;}
+    #fallback{padding:36px 24px 60px;}
+    #fallback h1{font-size:38px;}
+  }
+  @media (max-width:700px){
+    .search-btn{top:16px;right:16px;width:42px;height:42px;}
+    .search-btn.culture-btn{right:66px;}
+    .overlay-close{top:18px;right:16px;}
+    .overlay{padding-top:11vh;}
+    .overlay-title{font-size:24px;}
+    #search-input{font-size:22px;}
+    .label-block{left:20px;right:120px;top:16px;max-width:none;}
+    .eyebrow{font-size:13px;letter-spacing:0.24em;}
+    .eyebrow .salon{font-size:10px;letter-spacing:0.3em;margin-top:2px;}
+    .chapter{font-size:13px;margin-top:10px;}
+    h1{font-size:32px;}
+    .dek{display:none;}
+    .diplomacy{margin-top:10px;padding-top:8px;font-size:8.5px;letter-spacing:0.18em;line-height:1.9;}
+    .meta-block{left:16px;bottom:20px;}
+    .stats{gap:18px;}
+    .stat b{font-size:22px;}
+    .stat span{font-size:8px;letter-spacing:0.2em;margin-top:3px;}
+    #artist-panel{width:100%;padding:16px 22px 40px;}
+    .panel-close{
+      font-size:26px;padding:10px 12px;margin-right:-12px;
+      position:sticky;top:0;background:rgba(9,12,22,0.85);border-radius:50%;
+    }
+    .panel-name{font-size:26px;}
+    .artwork{min-height:130px;}
+    .vote-btn{padding:15px 16px;}
+  }
+</style>
+</head>
+<body>
+<div id="loading">
+  <div class="mark">World Culture Salon</div>
+  <div class="bar"><i></i></div>
+</div>
+
+<div id="app">
+  <canvas id="globe-canvas"></canvas>
+
+  <div class="label-block">
+    <div class="eyebrow"><a href="https://www.oneculturefdn.org/" target="_blank" rel="noopener">One Culture Foundation</a><span class="salon">World Culture Salon</span></div>
+    <div class="chapter">Chapter I</div>
+    <h1>Greece, <span class="accent">gathered</span></h1>
+    <p class="dek">One hundred and ten artists from around the world, each answering the Greek spirit from where they stand. Every thread of light returns to Athens.</p>
+    <div class="diplomacy">A Nonprofit for Cultural Diplomacy<br><span>Culture is not something to observe, but something to inhabit.</span></div>
+  </div>
+
+  <button class="search-btn" id="search-btn" aria-label="Search artists">
+    <svg width="19" height="19" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <circle cx="8.5" cy="8.5" r="6" stroke="currentColor" stroke-width="1.3"/>
+      <line x1="13.2" y1="13.2" x2="18" y2="18" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    </svg>
+  </button>
+  <button class="search-btn culture-btn" id="culture-btn" aria-label="Explore Greek culture">
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M6 20c2-6 2-11 0-16" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+      <path d="M18 20c-2-6-2-11 0-16" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+      <path d="M6 6c2 1 4 1 6 0M6 11c2 1 4 1 6 0M6 16c2 1 4 1 6 0" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/>
+      <path d="M18 6c-2 1-4 1-6 0M18 11c-2 1-4 1-6 0M18 16c-2 1-4 1-6 0" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/>
+    </svg>
+  </button>
+
+  <div id="search-overlay" class="overlay" hidden>
+    <button class="overlay-close" id="search-close" aria-label="Close search">✕</button>
+    <div class="overlay-box">
+      <input id="search-input" type="text" placeholder="Search an artist, a work, a city…" autocomplete="off">
+      <div class="search-count" id="search-count"></div>
+      <div class="search-results" id="search-results"></div>
+    </div>
+  </div>
+
+  <div id="culture-overlay" class="overlay" hidden>
+    <button class="overlay-close" id="culture-close" aria-label="Close">✕</button>
+    <div class="overlay-box wide">
+      <div class="overlay-eyebrow">The Greek Spirit</div>
+      <div class="overlay-title">Eight ideas that outlasted the myths</div>
+      <div class="overlay-sub">Words the Greeks kept because ordinary language wasn't enough — each one still standing somewhere on the map.</div>
+      <div class="list-rows" id="culture-list"></div>
+    </div>
+  </div>
+
+  <div class="meta-block">
+    <div class="stats">
+      <div class="stat"><b id="stat-artists">—</b><span>Artists</span></div>
+      <div class="stat"><b id="stat-locations">—</b><span>Cities</span></div>
+      <div class="stat"><b>I</b><span>Chapter</span></div>
+    </div>
+  </div>
+
+  <nav class="culture-rail" aria-label="Explore Greek culture">
+    <button class="rail-item" data-key="agora" aria-label="Agora">
+      <svg viewBox="0 0 48 48" fill="none"><path d="M16 34V16M32 34V16M12 16h24M10 34h28" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      <span class="rail-flyout"><b>Agora</b><i>ἀγορά</i></span>
+    </button>
+    <button class="rail-item" data-key="xenia" aria-label="Xenia">
+      <svg viewBox="0 0 48 48" fill="none"><path d="M14 34V18a10 10 0 0 1 20 0v16M10 35h28" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      <span class="rail-flyout"><b>Xenia</b><i>ξενία</i></span>
+    </button>
+    <button class="rail-item" data-key="kairos" aria-label="Kairos">
+      <svg viewBox="0 0 48 48" fill="none"><path d="M14 12H34L24 24L34 36H14L24 24L14 12Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg>
+      <span class="rail-flyout"><b>Kairos</b><i>καιρός</i></span>
+    </button>
+    <button class="rail-item" data-key="omphalos" aria-label="Omphalos">
+      <svg viewBox="0 0 48 48" fill="none"><ellipse cx="24" cy="26" rx="10" ry="13" stroke="currentColor" stroke-width="1.6"/><path d="M16 21q8 -6 16 0M15 30q9 5 18 0" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+      <span class="rail-flyout"><b>Omphalos</b><i>ὀμφαλός</i></span>
+    </button>
+    <button class="rail-item" data-key="olive" aria-label="The Olive Branch">
+      <svg viewBox="0 0 48 48" fill="none"><path d="M10 34Q24 20 38 10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><ellipse cx="16" cy="29" rx="4.4" ry="2" transform="rotate(-30 16 29)" stroke="currentColor" stroke-width="1.2"/><ellipse cx="24" cy="21.5" rx="4.4" ry="2" transform="rotate(-35 24 21.5)" stroke="currentColor" stroke-width="1.2"/><ellipse cx="32" cy="14.5" rx="4.4" ry="2" transform="rotate(-40 32 14.5)" stroke="currentColor" stroke-width="1.2"/></svg>
+      <span class="rail-flyout"><b>The Olive Branch</b><i>ἐλαία</i></span>
+    </button>
+    <button class="rail-item" data-key="symposium" aria-label="Symposium">
+      <svg viewBox="0 0 48 48" fill="none"><path d="M8 18Q24 34 40 18M6 17q-4 5 3 9M42 17q4 5 -3 9M24 30v10M16 41h16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <span class="rail-flyout"><b>Symposium</b><i>συμπόσιον</i></span>
+    </button>
+    <button class="rail-item" data-key="philotimo" aria-label="Philotimo">
+      <svg viewBox="0 0 48 48" fill="none"><path d="M24 8L36 14V26Q36 38 24 42Q12 38 12 26V14Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M24 10V40" stroke="currentColor" stroke-width="1.2"/></svg>
+      <span class="rail-flyout"><b>Philotimo</b><i>φιλότιμο</i></span>
+    </button>
+    <button class="rail-item" data-key="meraki" aria-label="Meraki">
+      <svg viewBox="0 0 48 48" fill="none"><path d="M24 8C32 20 30 30 24 40C18 30 16 20 24 8Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+      <span class="rail-flyout"><b>Meraki</b><i>μεράκι</i></span>
+    </button>
+  </nav>
+
+  <div class="hint">Drag to orbit · Scroll to zoom · Select a light to meet its artist</div>
+  <div class="mission">Ideas worth feeling.<br>Culture worth remembering.</div>
+
+  <aside id="artist-panel" aria-label="Artist detail">
+    <button class="panel-close" id="panel-close" aria-label="Close">✕</button>
+
+    <div id="panel-list" hidden>
+      <div class="panel-eyebrow">A Gathering of Lights</div>
+      <div class="panel-name" id="list-city"></div>
+      <div class="panel-country" id="list-count"></div>
+      <div class="list-rows" id="list-rows"></div>
+    </div>
+
+    <div id="panel-detail">
+      <div class="artwork">
+        <div class="title" id="panel-title"></div>
+        <div class="medium" id="panel-medium"></div>
+      </div>
+      <div class="panel-eyebrow" id="panel-continent"></div>
+      <div class="panel-name" id="panel-name"></div>
+      <div class="panel-country" id="panel-country"></div>
+      <div class="panel-links" id="panel-links"></div>
+      <button class="vote-btn" id="panel-vote">♡ Vote for this artist</button>
+      <div class="panel-section-label">Artist</div>
+      <div class="panel-bio" id="panel-bio"></div>
+      <div class="panel-section-label" id="panel-statement-label">On the Greek Spirit</div>
+      <div class="panel-bio" id="panel-statement"></div>
+    </div>
+  </aside>
+
+  <div id="fallback">
+    <div class="fb-head">
+      <div class="eyebrow"><a href="https://www.oneculturefdn.org/" target="_blank" rel="noopener">One Culture Foundation</a><span class="salon">World Culture Salon</span></div>
+      <div class="chapter">Chapter I</div>
+      <h1>Greece, <span class="accent">gathered</span></h1>
+      <div class="fb-note">
+        This browser cannot display the interactive globe, so here is the full gallery as a list.
+        Every artist, link and vote works exactly the same.
+      </div>
+    </div>
+    <div class="fb-grid" id="fb-grid"></div>
+  </div>
+</div>
+
+<script src="vendor/three.min.js"></script>
+<script src="vendor/OrbitControls.js"></script>
+<script>
+const ARTISTS = /*__DATA__*/[]/*__END__*/;
+const LANDMASK = "/*__LANDMASK__*/";
+const LAND_W = 240, LAND_H = 120;
+
+const REDUCED_MOTION = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const IS_TOUCH = window.matchMedia("(pointer: coarse)").matches;
+const MARKER_SCALE = IS_TOUCH ? 0.12 : 0.088;
+const MARKER_ACTIVE = IS_TOUCH ? 0.22 : 0.17;
+const GLOBE_MODE = new URLSearchParams(location.search).get("globe");
+const USE_TEXTURE = GLOBE_MODE !== "points";
+// the graded navy-and-gold earth is the default; ?globe=natural restores the photograph
+const TEXTURE_SRC = GLOBE_MODE === "natural" ? "earth.jpg" : "earth-gilded.jpg";
+
+document.getElementById("stat-artists").textContent = ARTISTS.length;
+document.getElementById("stat-locations").textContent = new Set(ARTISTS.map(a => a.location)).size;
+
+// ---------- Greek culture: eight ideas, each grounded in a real place ----------
+const CULTURE = [
+  { key: "agora", term: "Agora", greek: "ἀγορά", place: "Athens", lat: 37.9755, lng: 23.7222,
+    oneLiner: "The square where a city argued itself into being.",
+    body: "Long before it meant “marketplace,” agora meant gathering — the open ground where citizens traded, debated, and voted. Democracy was not born in a text; it was born in this crowd, in the friction of people who disagreed and had nowhere else to go but toward each other." },
+  { key: "xenia", term: "Xenia", greek: "ξενία", place: "Ithaca", lat: 38.3910, lng: 20.7130,
+    oneLiner: "The sacred duty of host to guest, and guest to host.",
+    body: "In the ancient world, a stranger at the door might be a god in disguise. Xenia bound host and guest in mutual honor — shelter and food offered without question, hospitality repaid with respect. The custom outlived the myths; it still shapes how a table welcomes strangers today." },
+  { key: "kairos", term: "Kairos", greek: "καιρός", place: "Olympia", lat: 37.6386, lng: 21.6303,
+    oneLiner: "The right moment — not measured, but seized.",
+    body: "Where Chronos counted the hours, Kairos named the instant that mattered: the opening a runner could find, the pause before a decision. The Greeks kept two words for time because duration and opportunity are not the same thing — and a life is judged more by its kairos than its chronos." },
+  { key: "omphalos", term: "Omphalos", greek: "ὀμφαλός", place: "Delphi", lat: 38.4824, lng: 22.5010,
+    oneLiner: "The stone the Greeks called the navel of the world.",
+    body: "At Delphi, pilgrims believed they stood where two eagles sent by Zeus had met, marking the center of the earth. It was here the oracle spoke in riddles that kings crossed the Mediterranean to hear — proof that even a civilization built on reason left room for a mystery it never fully resolved." },
+  { key: "olive", term: "The Olive Branch", greek: "ἐλαία", place: "Kalamata", lat: 37.0389, lng: 22.1142,
+    oneLiner: "Athena's gift, carried ever since as a plea for peace.",
+    body: "Legend holds that Athena won the naming of her city by giving it the olive tree — food, oil, and wood in a single gift, one that takes years of patience to bear fruit. The branch became shorthand for peace precisely because peace, like the olive, rewards those willing to wait for it." },
+  { key: "symposium", term: "Symposium", greek: "συμπόσιον", place: "Corinth", lat: 37.9061, lng: 22.8781,
+    oneLiner: "To drink together — and, in doing so, to think together.",
+    body: "A symposium was never just a party. Wine loosened the room for poetry, argument, and confession, host and guests reclining as equals until dawn. The word survives in every academic conference today, though most have forgotten it once meant staying up all night for the sake of a good idea." },
+  { key: "philotimo", term: "Philotimo", greek: "φιλότιμο", place: "Thessaloniki", lat: 40.6401, lng: 22.9444,
+    oneLiner: "Love of honor — the debt owed to one's own community.",
+    body: "There is no exact translation for philotimo, which is itself telling. It names a private code: to act rightly not because you are watched, but because your people, living and dead, are owed your good name. It is generosity practiced as obligation, not performance." },
+  { key: "meraki", term: "Meraki", greek: "μεράκι", place: "Heraklion, Crete", lat: 35.3387, lng: 25.1442,
+    oneLiner: "To do something with soul, not obligation.",
+    body: "Meraki describes the extra hour spent on a dish no one asked for, the flourish in a letter meant to be read only once. It is creativity performed for its own sake — the same impulse that, this chapter, sent one hundred and ten artists toward a single word: Greece." },
+];
+
+// ---------- voting (shared by globe panel and fallback list) ----------
+const API_BASE = /vercel\.app$|^localhost$|^127\./.test(location.hostname) ? "" : "https://wcs-greece-globe.vercel.app";
+const votedSet = new Set(JSON.parse(localStorage.getItem("wcs_votes") || "[]"));
+
+function voteLabel(index) {
+  return votedSet.has(index)
+    ? '<span class="default-text">♥ Vote recorded</span><span class="undo-hint">Undo my vote</span>'
+    : "♡ Vote for this artist";
+}
+function paintVoteBtn(btn, index) {
+  btn.disabled = false;
+  btn.innerHTML = voteLabel(index);
+  btn.classList.toggle("voted", votedSet.has(index));
+}
+async function submitVote(btn, index) {
+  if (btn.disabled) return;
+  const undoing = votedSet.has(index);
+  btn.disabled = true;
+  btn.classList.remove("voted");
+  btn.textContent = undoing ? "Removing…" : "Recording…";
+  try {
+    const r = await fetch(API_BASE + "/api/vote", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ artist: index, action: undoing ? "unvote" : "vote" }),
+    });
+    if (!r.ok) throw new Error("vote failed");
+    if (undoing) votedSet.delete(index); else votedSet.add(index);
+    localStorage.setItem("wcs_votes", JSON.stringify([...votedSet]));
+    paintVoteBtn(btn, index);
+  } catch (e) {
+    btn.textContent = "Voting opens soon";
+    setTimeout(() => paintVoteBtn(btn, index), 2500);
+  }
+}
+
+function linkBtn(href, label, primary) {
+  if (!href) return "";
+  const url = /^https?:\/\//i.test(href) ? href : "https://" + href;
+  return `<a href="${url}" target="_blank" rel="noopener" class="${primary ? "primary" : ""}">${label}</a>`;
+}
+function socialUrl(s) {
+  if (!s) return "";
+  return s.startsWith("@") ? "https://www.instagram.com/" + s.slice(1).trim() : s;
+}
+function esc(s) {
+  return String(s || "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+}
+
+// ---------- fallback gallery (no WebGL) ----------
+function showFallback() {
+  const grid = document.getElementById("fb-grid");
+  grid.innerHTML = ARTISTS.map(a => `
+    <div class="fb-card">
+      <div class="idx">${esc(a.continent)}</div>
+      <div class="nm">${esc(a.name)}</div>
+      <div class="loc">${esc(a.location)}</div>
+      <div class="ttl">${esc(a.title || "Untitled")}</div>
+      <div class="med">${esc(a.medium)}</div>
+      <div class="lk">
+        ${linkBtn(a.artworkLink, "Artwork ↗", true)}
+        ${linkBtn(a.website, "Portfolio")}
+        ${linkBtn(socialUrl(a.social), "Social")}
+      </div>
+      <button class="vote-btn" data-artist="${a.index}">${voteLabel(a.index)}</button>
+    </div>`).join("");
+  grid.querySelectorAll(".vote-btn").forEach(btn => {
+    const idx = Number(btn.dataset.artist);
+    btn.classList.toggle("voted", votedSet.has(idx));
+    btn.addEventListener("click", () => submitVote(btn, idx));
+  });
+  document.body.classList.add("fallback-mode");
+  document.getElementById("loading").classList.add("done");
+}
+
+function webglAvailable() {
+  try {
+    const c = document.createElement("canvas");
+    return !!(window.WebGLRenderingContext && (c.getContext("webgl") || c.getContext("experimental-webgl")));
+  } catch (e) { return false; }
+}
+
+// ---------- explore Greece: eight culture cards ----------
+// Pure DOM content — kept independent of the 3D scene so the rail and the
+// overlay work identically whether or not the globe itself renders.
+const cultureOverlay = document.getElementById("culture-overlay");
+const cultureList = document.getElementById("culture-list");
+
+function renderCultureList(expandKey) {
+  cultureList.innerHTML = CULTURE.map(c => `
+    <div class="list-item" data-key="${c.key}">
+      <button class="list-row" aria-expanded="false">
+        <span class="lr-name">${esc(c.term)}<em class="lr-greek">${c.greek}</em></span>
+        <span class="lr-title">${esc(c.oneLiner)}</span>
+        <span class="lr-loc">${esc(c.place)}, Greece</span>
+        <span class="lr-chevron" aria-hidden="true">＋</span>
+      </button>
+      <div class="row-detail"><div class="row-detail-inner"></div></div>
+    </div>`).join("");
+
+  let openItem = null;
+  cultureList.querySelectorAll(".list-item").forEach(item => {
+    const btn = item.querySelector(".list-row");
+    const c = CULTURE.find(x => x.key === item.dataset.key);
+    btn.addEventListener("click", () => {
+      if (openItem === item) {
+        item.classList.remove("open");
+        btn.setAttribute("aria-expanded", "false");
+        openItem = null;
+        return;
+      }
+      if (openItem) {
+        openItem.classList.remove("open");
+        openItem.querySelector(".list-row").setAttribute("aria-expanded", "false");
+      }
+      const inner = item.querySelector(".row-detail-inner");
+      if (!inner.innerHTML) inner.innerHTML = `<div class="panel-bio">${esc(c.body)}</div>`;
+      item.classList.add("open");
+      btn.setAttribute("aria-expanded", "true");
+      openItem = item;
+      setTimeout(() => btn.scrollIntoView({ behavior: "smooth", block: "start" }), 200);
+    });
+  });
+
+  if (expandKey) {
+    const item = cultureList.querySelector(`.list-item[data-key="${expandKey}"]`);
+    if (item) item.querySelector(".list-row").click();
+  }
+}
+
+function openCultureOverlay(expandKey) {
+  renderCultureList(expandKey);
+  cultureOverlay.hidden = false;
+  requestAnimationFrame(() => cultureOverlay.classList.add("open"));
+}
+function closeCultureOverlay() {
+  cultureOverlay.classList.remove("open");
+  setTimeout(() => { cultureOverlay.hidden = true; }, 300);
+}
+document.getElementById("culture-btn").addEventListener("click", () => openCultureOverlay());
+document.getElementById("culture-close").addEventListener("click", closeCultureOverlay);
+cultureOverlay.addEventListener("click", (e) => { if (e.target === cultureOverlay) closeCultureOverlay(); });
+document.querySelectorAll(".rail-item").forEach(btn => {
+  btn.addEventListener("click", () => openCultureOverlay(btn.dataset.key));
+});
+window.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !cultureOverlay.hidden) closeCultureOverlay();
+});
+
+if (typeof THREE === "undefined" || !webglAvailable()) {
+  showFallback();
+} else {
+  try { initGlobe(); } catch (e) { showFallback(); }
+}
+
+// ---------- globe ----------
+function initGlobe() {
+const canvas = document.getElementById("globe-canvas");
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 1000);
+
+// Wide screens sit close so the globe commands the frame; only narrow/portrait
+// viewports pull back, and only as far as fitting the sphere actually requires.
+function cameraDistanceForAspect() {
+  const halfV = THREE.MathUtils.degToRad(camera.fov / 2);
+  const fitWidth = 2.15 / (Math.tan(halfV) * camera.aspect);
+  return Math.min(11.5, Math.max(5.65, fitWidth));
+}
+camera.position.set(0, 0.4, cameraDistanceForAspect());
+
+// Editorial composition: subject right, type left. Portrait keeps it centred.
+function globeOffsetX() {
+  return camera.aspect > 1.3 ? 0.78 : 0;
+}
+
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+renderer.setSize(innerWidth, innerHeight);
+
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.autoRotate = !REDUCED_MOTION;
+controls.autoRotateSpeed = 0.45;
+controls.minDistance = 3.2;
+controls.maxDistance = Math.max(9, cameraDistanceForAspect() + 1.5);
+controls.enablePan = false;
+
+// Low cool ambient keeps the night side deep blue rather than dead black, while a
+// strong warm key preserves the terminator that gives the sphere its volume.
+scene.add(new THREE.AmbientLight(0xa8bdd8, 0.58));
+const sun = new THREE.DirectionalLight(0xfff3dd, 1.32);
+sun.position.set(5, 2.6, 4.4);
+scene.add(sun);
+const rim = new THREE.DirectionalLight(0x5b8fc4, 0.46);
+rim.position.set(-5, -1.5, -3.5);
+scene.add(rim);
+
+const RADIUS = 2;
+
+function makeGlowTexture() {
+  const size = 128, c = document.createElement("canvas");
+  c.width = c.height = size;
+  const ctx = c.getContext("2d");
+  const g = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2);
+  g.addColorStop(0, "rgba(255,255,255,1)");
+  g.addColorStop(0.35, "rgba(255,255,255,0.8)");
+  g.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, size, size);
+  return new THREE.CanvasTexture(c);
+}
+const glowTex = makeGlowTexture();
+
+function latLngToVector3(lat, lng, r) {
+  const phi = (90 - lat) * (Math.PI / 180);
+  const theta = (lng + 180) * (Math.PI / 180);
+  return new THREE.Vector3(
+    -r * Math.sin(phi) * Math.cos(theta),
+    r * Math.cos(phi),
+    r * Math.sin(phi) * Math.sin(theta)
+  );
+}
+
+// globe body — a solid dark sphere always sits underneath so far-side detail is occluded
+const globe = new THREE.Group();
+globe.position.x = globeOffsetX();
+controls.target.x = globe.position.x;
+controls.update();
+scene.add(globe);
+
+// Open on Greece, not wherever the coordinate system's front meridian happens to
+// face by default (that was the mid-Atlantic — fine for no chapter in particular,
+// wrong for this one). The chapter's whole story starts here.
+{
+  const frontDir = latLngToVector3(37.98, 23.73, 1);
+  const dist = cameraDistanceForAspect();
+  camera.position.copy(controls.target).addScaledVector(frontDir, dist);
+  camera.position.y += dist * 0.07;
+  controls.update();
+}
+
+if (USE_TEXTURE) {
+  // The texture carries its own colour; tinting it only drains the photograph.
+  const mat = new THREE.MeshPhongMaterial({
+    color: 0x1e3550, specular: 0x141a24, shininess: 14,
+  });
+  new THREE.TextureLoader().load(TEXTURE_SRC, (tex) => {
+    if (renderer.capabilities.getMaxAnisotropy) {
+      tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+    }
+    mat.map = tex;
+    mat.color.set(0xffffff);
+    mat.needsUpdate = true;
+  }, undefined, () => {});
+  globe.add(new THREE.Mesh(new THREE.SphereGeometry(RADIUS, 96, 96), mat));
+} else {
+  // opaque shell so land points on the far side stay hidden
+  globe.add(new THREE.Mesh(
+    new THREE.SphereGeometry(RADIUS * 0.985, 48, 48),
+    new THREE.MeshPhongMaterial({ color: 0x0a1524, shininess: 2 })
+  ));
+  // land rendered as a field of light points, decoded from a packed bitmask
+  const bin = atob(LANDMASK);
+  const pts = [];
+  for (let y = 0; y < LAND_H; y++) {
+    for (let x = 0; x < LAND_W; x++) {
+      const i = y * LAND_W + x;
+      if (!(bin.charCodeAt(i >> 3) >> (7 - (i & 7)) & 1)) continue;
+      const lat = 90 - (y + 0.5) * (180 / LAND_H);
+      const lng = (x + 0.5) * (360 / LAND_W) - 180;
+      const v = latLngToVector3(lat, lng, RADIUS);
+      pts.push(v.x, v.y, v.z);
+    }
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.Float32BufferAttribute(pts, 3));
+  globe.add(new THREE.Points(geo, new THREE.PointsMaterial({
+    color: 0x9ec6e8, size: 0.035, map: glowTex, transparent: true,
+    opacity: 0.95, depthWrite: false, sizeAttenuation: true,
+  })));
+}
+
+// Atmosphere: a fresnel shell that is transparent face-on and bright at the limb,
+// which is what reads as air around a planet rather than a flat blue overlay.
+let atmosphereMat = null;
+(function addAtmosphere() {
+  const flat = () => globe.add(new THREE.Mesh(
+    new THREE.SphereGeometry(RADIUS * 1.035, 48, 48),
+    new THREE.MeshBasicMaterial({ color: 0x7fb3d9, transparent: true, opacity: 0.07, side: THREE.BackSide })
+  ));
+  try {
+    const shell = new THREE.Mesh(
+      new THREE.SphereGeometry(RADIUS * 1.06, 64, 64),
+      new THREE.ShaderMaterial({
+        uniforms: {
+          glowColor: { value: new THREE.Color(0x86bdf0) },
+          intensity: { value: 1.3 },
+          falloff: { value: 1.5 },
+          sunDir: { value: new THREE.Vector3(0, 0, 1) },
+        },
+        vertexShader: [
+          "varying vec3 vNormal;",
+          "varying vec3 vView;",
+          "void main() {",
+          "  vNormal = normalize(normalMatrix * normal);",
+          "  vec4 mv = modelViewMatrix * vec4(position, 1.0);",
+          "  vView = -mv.xyz;",
+          "  gl_Position = projectionMatrix * mv;",
+          "}",
+        ].join("\n"),
+        fragmentShader: [
+          "uniform vec3 glowColor;",
+          "uniform float intensity;",
+          "uniform float falloff;",
+          "uniform vec3 sunDir;",
+          "varying vec3 vNormal;",
+          "varying vec3 vView;",
+          "void main() {",
+          "  // Back faces point away from the camera, so magnitude stands in for how much",
+          "  // air the ray crossed: brightest hugging the horizon, fading out into space.",
+          "  float depth = abs(dot(normalize(vView), normalize(vNormal)));",
+          "  // Air only glows where the sun reaches it, so the night limb stays black.",
+          "  float lit = smoothstep(-0.32, 0.42, dot(normalize(vNormal), normalize(sunDir)));",
+          "  gl_FragColor = vec4(glowColor, pow(depth, falloff) * intensity * lit);",
+          "}",
+        ].join("\n"),
+        side: THREE.BackSide,
+        blending: THREE.AdditiveBlending,
+        transparent: true,
+        depthWrite: false,
+      })
+    );
+    atmosphereMat = shell.material;
+    globe.add(shell);
+  } catch (e) {
+    flat();
+  }
+})();
+
+// (no backdrop bloom: it hazed the limb the atmosphere shell already draws)
+
+// ---------- markers ----------
+// One colour for every artist: cool starlight against the gilded land, so the
+// only warm light on the globe is Greek — the beacon, and the threads home.
+const markerMat = new THREE.SpriteMaterial({
+  map: glowTex, color: 0xbfdcff, transparent: true,
+  blending: THREE.AdditiveBlending, depthWrite: false,
+});
+
+const markers = [];
+ARTISTS.forEach((artist) => {
+  const sprite = new THREE.Sprite(markerMat);
+  sprite.position.copy(latLngToVector3(artist.lat, artist.lng, RADIUS * 1.015));
+  sprite.scale.set(MARKER_SCALE, MARKER_SCALE, MARKER_SCALE);
+  sprite.userData = artist;
+  globe.add(sprite);
+  markers.push(sprite);
+});
+
+
+// ---------- threads of light returning to Athens (one merged draw call) ----------
+const ATHENS = latLngToVector3(37.98, 23.73, RADIUS * 1.015);
+const arcCurves = new Map();
+const segPositions = [];
+markers.forEach((m) => {
+  const from = m.position.clone(), to = ATHENS.clone();
+  const dist = from.distanceTo(to);
+  if (dist < 0.05) return;
+  const mid = from.clone().add(to).multiplyScalar(0.5).normalize()
+    .multiplyScalar(RADIUS * (1.02 + dist * 0.12));
+  const curve = new THREE.QuadraticBezierCurve3(from, mid, to);
+  arcCurves.set(m, curve);
+  const p = curve.getPoints(40);
+  for (let i = 0; i < p.length - 1; i++) {
+    segPositions.push(p[i].x, p[i].y, p[i].z, p[i+1].x, p[i+1].y, p[i+1].z);
+  }
+});
+const arcGeo = new THREE.BufferGeometry();
+arcGeo.setAttribute("position", new THREE.Float32BufferAttribute(segPositions, 3));
+globe.add(new THREE.LineSegments(arcGeo, new THREE.LineBasicMaterial({
+  color: 0xe8c894, transparent: true, opacity: 0.13,
+  blending: THREE.AdditiveBlending, depthWrite: false,
+})));
+
+// the selected thread is a single separate line, rebuilt on click
+const highlight = new THREE.Line(
+  new THREE.BufferGeometry(),
+  new THREE.LineBasicMaterial({
+    color: 0xf0dcb4, transparent: true, opacity: 0.75,
+    blending: THREE.AdditiveBlending, depthWrite: false,
+  })
+);
+highlight.visible = false;
+globe.add(highlight);
+
+const beacon = new THREE.Sprite(new THREE.SpriteMaterial({
+  map: glowTex, color: 0xd4b483, transparent: true,
+  blending: THREE.AdditiveBlending, depthWrite: false,
+}));
+beacon.position.copy(ATHENS);
+beacon.scale.set(0.22, 0.22, 0.22);
+globe.add(beacon);
+
+const allCurves = [...arcCurves.values()];
+const PULSE_COUNT = REDUCED_MOTION ? 0 : 4;
+const pulseMat = new THREE.SpriteMaterial({
+  map: glowTex, color: 0xf0dcb4, transparent: true,
+  blending: THREE.AdditiveBlending, depthWrite: false,
+});
+const pulses = [];
+for (let i = 0; i < PULSE_COUNT; i++) {
+  const s = new THREE.Sprite(pulseMat.clone());
+  s.scale.set(0.07, 0.07, 0.07);
+  globe.add(s);
+  pulses.push({ sprite: s, curve: null, t: 1 + i * 0.3 });
+}
+
+// ---------- starfield ----------
+function starLayer(count, size, opacity, spread) {
+  const geo = new THREE.BufferGeometry();
+  const pos = new Float32Array(count * 3);
+  for (let i = 0; i < count; i++) {
+    const r = spread + Math.random() * 60;
+    const theta = Math.random() * Math.PI * 2;
+    const phi = Math.acos(2 * Math.random() - 1);
+    pos[i*3] = r * Math.sin(phi) * Math.cos(theta);
+    pos[i*3+1] = r * Math.sin(phi) * Math.sin(theta);
+    pos[i*3+2] = r * Math.cos(phi);
+  }
+  geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+  const pts = new THREE.Points(geo, new THREE.PointsMaterial({
+    color: 0xffffff, size, transparent: true, opacity, depthWrite: false,
+  }));
+  scene.add(pts);
+  return pts;
+}
+const starsFar = starLayer(700, 0.28, 0.4, 45);
+const starsNear = starLayer(200, 0.5, 0.65, 30);
+starsNear.material.color.set(0xf0e6d0); // near stars lean ivory, tying the sky to the gold
+
+// ---------- interaction ----------
+const raycaster = new THREE.Raycaster();
+raycaster.params.Sprite = { threshold: IS_TOUCH ? 0.3 : 0.15 };
+const mouse = new THREE.Vector2();
+const panel = document.getElementById("artist-panel");
+const voteBtn = document.getElementById("panel-vote");
+let activeMarker = null, currentArtist = null;
+
+function setMouse(e) {
+  const r = renderer.domElement.getBoundingClientRect();
+  mouse.x = ((e.clientX - r.left) / r.width) * 2 - 1;
+  mouse.y = -((e.clientY - r.top) / r.height) * 2 + 1;
+}
+
+function clearActive() {
+  if (activeMarker) activeMarker.scale.set(MARKER_SCALE, MARKER_SCALE, MARKER_SCALE);
+  highlight.visible = false;
+  activeMarker = null;
+}
+
+const listWrap = document.getElementById("panel-list");
+const detailWrap = document.getElementById("panel-detail");
+
+// lights up an artist's marker and their thread home, without touching the panel
+function spotlightArtist(sprite) {
+  clearActive();
+  activeMarker = sprite;
+  sprite.scale.set(MARKER_ACTIVE, MARKER_ACTIVE, MARKER_ACTIVE);
+  const curve = arcCurves.get(sprite);
+  if (curve) {
+    highlight.geometry.dispose();
+    highlight.geometry = new THREE.BufferGeometry().setFromPoints(curve.getPoints(48));
+    highlight.visible = true;
+  }
+}
+
+function inlineDetailHTML(a) {
+  const statement = a.statement ? `
+    <div class="panel-section-label">On the Greek Spirit</div>
+    <div class="panel-bio">${esc(a.statement)}</div>` : "";
+  return `
+    <div class="artwork mini">
+      <div class="title">${esc(a.title || "Untitled")}</div>
+      <div class="medium">${esc(a.medium || "")}</div>
+    </div>
+    <div class="panel-links">
+      ${linkBtn(a.artworkLink, "View artwork ↗", true)}
+      ${linkBtn(a.website, "Portfolio")}
+      ${linkBtn(socialUrl(a.social), "Social")}
+    </div>
+    <button class="vote-btn" data-artist="${a.index}">${voteLabel(a.index)}</button>
+    <div class="panel-section-label">Artist</div>
+    <div class="panel-bio">${esc(a.bio || "—")}</div>${statement}`;
+}
+
+function openListPanel(items) {
+  clearActive();
+
+  const locs = new Set(items.map(a => a.location));
+  document.getElementById("list-city").textContent =
+    locs.size === 1 ? items[0].location : items[0].location + " & nearby";
+  document.getElementById("list-count").textContent =
+    items.length + " artists shine here — choose one to meet";
+
+  const rows = document.getElementById("list-rows");
+  rows.innerHTML = items.map(a => `
+    <div class="list-item" data-i="${a.index}">
+      <button class="list-row" aria-expanded="false">
+        <span class="lr-name">${esc(a.name)}</span>
+        <span class="lr-title">${esc(a.title || "Untitled")}</span>
+        <span class="lr-loc">${esc(a.location)}</span>
+        <span class="lr-chevron" aria-hidden="true">＋</span>
+      </button>
+      <div class="row-detail"><div class="row-detail-inner"></div></div>
+    </div>`).join("");
+
+  let openItem = null;
+  rows.querySelectorAll(".list-item").forEach(item => {
+    const btn = item.querySelector(".list-row");
+    btn.addEventListener("click", () => {
+      // a second tap on the open artist folds them away again
+      if (openItem === item) {
+        item.classList.remove("open");
+        btn.setAttribute("aria-expanded", "false");
+        openItem = null;
+        clearActive();
+        return;
+      }
+      if (openItem) {
+        openItem.classList.remove("open");
+        openItem.querySelector(".list-row").setAttribute("aria-expanded", "false");
+      }
+      const artist = ARTISTS.find(x => x.index === Number(item.dataset.i));
+      const inner = item.querySelector(".row-detail-inner");
+      if (!inner.innerHTML) {
+        inner.innerHTML = inlineDetailHTML(artist);
+        const vb = inner.querySelector(".vote-btn");
+        vb.classList.toggle("voted", votedSet.has(artist.index));
+        vb.addEventListener("click", () => submitVote(vb, artist.index));
+      }
+      item.classList.add("open");
+      btn.setAttribute("aria-expanded", "true");
+      openItem = item;
+      const sprite = markers.find(m => m.userData.index === artist.index);
+      if (sprite) spotlightArtist(sprite);
+      // keep the tapped name in sight while its detail unfolds beneath it
+      setTimeout(() => btn.scrollIntoView({ behavior: "smooth", block: "start" }), 200);
+    });
+  });
+
+  detailWrap.hidden = true;
+  listWrap.hidden = false;
+  panel.scrollTop = 0;
+  panel.classList.add("open");
+  controls.autoRotate = false;
+}
+
+function openPanel(artist, sprite) {
+  spotlightArtist(sprite);
+
+  listWrap.hidden = true;
+  detailWrap.hidden = false;
+
+  document.getElementById("panel-title").textContent = artist.title || "Untitled";
+  document.getElementById("panel-medium").textContent = artist.medium || "";
+  document.getElementById("panel-continent").textContent = artist.continent;
+  document.getElementById("panel-name").textContent = artist.name;
+  document.getElementById("panel-country").textContent = artist.location;
+  document.getElementById("panel-links").innerHTML =
+    linkBtn(artist.artworkLink, "View artwork ↗", true) +
+    linkBtn(artist.website, "Portfolio") +
+    linkBtn(socialUrl(artist.social), "Social");
+  document.getElementById("panel-bio").textContent = artist.bio || "—";
+  const st = document.getElementById("panel-statement");
+  const stLabel = document.getElementById("panel-statement-label");
+  if (artist.statement) { st.textContent = artist.statement; st.style.display = ""; stLabel.style.display = ""; }
+  else { st.style.display = "none"; stLabel.style.display = "none"; }
+
+  currentArtist = artist;
+  paintVoteBtn(voteBtn, artist.index);
+
+  panel.scrollTop = 0;
+  panel.classList.add("open");
+  controls.autoRotate = false;
+}
+
+voteBtn.addEventListener("click", () => {
+  if (currentArtist) submitVote(voteBtn, currentArtist.index);
+});
+
+renderer.domElement.addEventListener("click", (e) => {
+  setMouse(e);
+  raycaster.setFromCamera(mouse, camera);
+
+  const hits = raycaster.intersectObjects(markers);
+  if (!hits.length) return;
+  // gather every light under the cursor on the near side of the globe
+  // (deeper hits are the same cluster; far-side hits are a whole radius away)
+  const nearest = hits[0].distance;
+  const seen = new Set();
+  const cluster = [];
+  hits.forEach(h => {
+    if (h.distance > nearest + 0.45) return;
+    const a = h.object.userData;
+    if (seen.has(a.index)) return;
+    seen.add(a.index);
+    cluster.push(a);
+  });
+  if (cluster.length === 1) openPanel(cluster[0], hits[0].object);
+  else openListPanel(cluster);
+});
+
+renderer.domElement.addEventListener("pointermove", (e) => {
+  setMouse(e);
+  raycaster.setFromCamera(mouse, camera);
+  const hovering = raycaster.intersectObjects(markers).length > 0;
+  renderer.domElement.style.cursor = hovering ? "pointer" : "grab";
+});
+
+document.getElementById("panel-close").addEventListener("click", () => {
+  panel.classList.remove("open");
+  clearActive();
+  currentArtist = null;
+  controls.autoRotate = !REDUCED_MOTION;
+});
+
+// ---------- search ----------
+const searchOverlay = document.getElementById("search-overlay");
+const searchInput = document.getElementById("search-input");
+const searchCount = document.getElementById("search-count");
+const searchResults = document.getElementById("search-results");
+
+// the globe swings round so the chosen artist's light faces the viewer
+let flight = null;
+function flyToSprite(sprite) {
+  const target = controls.target.clone();
+  const world = sprite.getWorldPosition(new THREE.Vector3());
+  const dirTo = world.sub(target).normalize();
+  const dirFrom = camera.position.clone().sub(target).normalize();
+  const dist = camera.position.distanceTo(target);
+  if (REDUCED_MOTION) {
+    camera.position.copy(target).addScaledVector(dirTo, dist);
+    controls.update();
+    return;
+  }
+  flight = { dirFrom, dirTo, dist, target, t: 0 };
+}
+
+function openSearch() {
+  searchOverlay.hidden = false;
+  requestAnimationFrame(() => searchOverlay.classList.add("open"));
+  searchInput.value = "";
+  renderSearch("");
+  searchInput.focus();
+}
+function closeSearch() {
+  searchOverlay.classList.remove("open");
+  setTimeout(() => { searchOverlay.hidden = true; }, 300);
+}
+
+function renderSearch(q) {
+  q = q.trim().toLowerCase();
+  if (!q) {
+    searchCount.textContent = "Type to search " + ARTISTS.length + " artists";
+    searchResults.innerHTML = "";
+    return;
+  }
+  const hits = ARTISTS.filter(a =>
+    [a.name, a.title, a.location, a.medium].some(f => (f || "").toLowerCase().includes(q))
+  ).slice(0, 40);
+  searchCount.textContent = hits.length
+    ? hits.length + (hits.length === 1 ? " light found" : " lights found")
+    : "No lights found — try another name";
+  searchResults.innerHTML = hits.map(a => `
+    <button class="list-row" data-i="${a.index}">
+      <span class="lr-name">${esc(a.name)}</span>
+      <span class="lr-title">${esc(a.title || "Untitled")}</span>
+      <span class="lr-loc">${esc(a.location)} · ${esc(a.medium || "")}</span>
+    </button>`).join("");
+  searchResults.querySelectorAll(".list-row").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const artist = ARTISTS.find(x => x.index === Number(btn.dataset.i));
+      const sprite = markers.find(m => m.userData.index === artist.index);
+      closeSearch();
+      openPanel(artist, sprite);
+      if (sprite) flyToSprite(sprite);
+    });
+  });
+}
+
+document.getElementById("search-btn").addEventListener("click", openSearch);
+document.getElementById("search-close").addEventListener("click", closeSearch);
+searchOverlay.addEventListener("click", (e) => { if (e.target === searchOverlay) closeSearch(); });
+searchInput.addEventListener("input", () => renderSearch(searchInput.value));
+
+// test hook: exposes internals only when ?debug is present
+if (new URLSearchParams(location.search).has("debug")) {
+  window.__wcs = { markers, openPanel, openListPanel, openCultureOverlay, ARTISTS, CULTURE, camera, controls };
+}
+
+window.addEventListener("resize", () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+  const d = cameraDistanceForAspect();
+  controls.maxDistance = Math.max(9, d + 1.5);
+  if (camera.position.length() < d) camera.position.setLength(d);
+  globe.position.x = globeOffsetX();
+  controls.target.x = globe.position.x;
+});
+
+const sunDirView = new THREE.Vector3();
+const t0 = performance.now();
+let shown = false;
+(function animate() {
+  requestAnimationFrame(animate);
+  const t = (performance.now() - t0) / 1000;
+
+  beacon.scale.setScalar(0.22 + Math.sin(t * 2.2) * 0.045);
+  if (!REDUCED_MOTION) {
+    starsFar.rotation.y = t * 0.004;
+    starsNear.rotation.y = -t * 0.007;
+  }
+
+  pulses.forEach((p, i) => {
+    p.t += 0.006;
+    if (p.t >= 1) {
+      p.t = -0.4 * i * Math.random();
+      p.curve = allCurves[Math.floor(Math.random() * allCurves.length)];
+    }
+    if (p.curve && p.t >= 0 && p.t <= 1) {
+      p.curve.getPoint(p.t, p.sprite.position);
+      p.sprite.material.opacity = Math.sin(p.t * Math.PI);
+    } else {
+      p.sprite.material.opacity = 0;
+    }
+  });
+
+  if (flight) {
+    flight.t += 0.022;
+    const e2 = flight.t < 0.5
+      ? 2 * flight.t * flight.t
+      : 1 - Math.pow(-2 * flight.t + 2, 2) / 2; // easeInOutQuad
+    // blend the two view directions on the sphere so the camera never cuts
+    // through the globe on its way to the far side
+    const dir = flight.dirFrom.clone().lerp(flight.dirTo, Math.min(e2, 1));
+    if (dir.lengthSq() < 0.001) dir.set(0, 1, 0); // antipodal guard
+    dir.normalize();
+    camera.position.copy(flight.target).addScaledVector(dir, flight.dist);
+    if (flight.t >= 1) flight = null;
+  }
+
+  if (atmosphereMat) {
+    sunDirView.copy(sun.position).normalize().transformDirection(camera.matrixWorldInverse);
+    atmosphereMat.uniforms.sunDir.value.copy(sunDirView);
+  }
+
+  controls.update();
+  renderer.render(scene, camera);
+
+  if (!shown) {
+    shown = true;
+    document.getElementById("loading").classList.add("done");
+  }
+})();
+}
+</script>
+</body>
+</html>

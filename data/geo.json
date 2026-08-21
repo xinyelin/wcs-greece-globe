@@ -1,0 +1,566 @@
+{
+  "london, uk": [
+    51.507,
+    -0.128,
+    "London, UK",
+    "Europe"
+  ],
+  "london": [
+    51.507,
+    -0.128,
+    "London, UK",
+    "Europe"
+  ],
+  "london, england": [
+    51.507,
+    -0.128,
+    "London, UK",
+    "Europe"
+  ],
+  "england, london": [
+    51.507,
+    -0.128,
+    "London, UK",
+    "Europe"
+  ],
+  "uk, london": [
+    51.507,
+    -0.128,
+    "London, UK",
+    "Europe"
+  ],
+  "london, united kingdom": [
+    51.507,
+    -0.128,
+    "London, UK",
+    "Europe"
+  ],
+  "london,uk": [
+    51.507,
+    -0.128,
+    "London, UK",
+    "Europe"
+  ],
+  "london, uk & athens, greece": [
+    51.507,
+    -0.128,
+    "London, UK & Athens, Greece",
+    "Europe"
+  ],
+  "hertford": [
+    51.796,
+    -0.078,
+    "Hertford, UK",
+    "Europe"
+  ],
+  "united kingdom": [
+    52.5,
+    -1.5,
+    "United Kingdom",
+    "Europe"
+  ],
+  "uk": [
+    52.5,
+    -1.5,
+    "United Kingdom",
+    "Europe"
+  ],
+  "england": [
+    52.36,
+    -1.17,
+    "England, UK",
+    "Europe"
+  ],
+  "scotland": [
+    56.49,
+    -4.2,
+    "Scotland, UK",
+    "Europe"
+  ],
+  "scotland / stirlingshire": [
+    56.12,
+    -4.0,
+    "Stirlingshire, Scotland",
+    "Europe"
+  ],
+  "st leonards-on-sea united kingdom": [
+    50.85,
+    0.54,
+    "St Leonards-on-Sea, UK",
+    "Europe"
+  ],
+  "skelmersdale, uk": [
+    53.55,
+    -2.78,
+    "Skelmersdale, UK",
+    "Europe"
+  ],
+  "bristol, united kingdom": [
+    51.45,
+    -2.59,
+    "Bristol, UK",
+    "Europe"
+  ],
+  "united kingdom / york": [
+    53.96,
+    -1.08,
+    "York, UK",
+    "Europe"
+  ],
+  "camborne, uk": [
+    50.21,
+    -5.3,
+    "Camborne, UK",
+    "Europe"
+  ],
+  "doll": [
+    58.01,
+    -3.85,
+    "Doll, Scotland",
+    "Europe"
+  ],
+  "san francisco": [
+    37.77,
+    -122.42,
+    "San Francisco, USA",
+    "Americas"
+  ],
+  "united states": [
+    39.8,
+    -98.6,
+    "United States",
+    "Americas"
+  ],
+  "los angeles": [
+    34.05,
+    -118.24,
+    "Los Angeles, USA",
+    "Americas"
+  ],
+  "u.s./los angeles": [
+    34.05,
+    -118.24,
+    "Los Angeles, USA",
+    "Americas"
+  ],
+  "usa/baldwin park": [
+    34.09,
+    -117.97,
+    "Baldwin Park, CA, USA",
+    "Americas"
+  ],
+  "usa / columbus, oh": [
+    39.96,
+    -83.0,
+    "Columbus, OH, USA",
+    "Americas"
+  ],
+  "usa/santa cruz": [
+    36.97,
+    -122.03,
+    "Santa Cruz, CA, USA",
+    "Americas"
+  ],
+  "united states / pennsylvania": [
+    40.9,
+    -77.8,
+    "Pennsylvania, USA",
+    "Americas"
+  ],
+  "usa/orlando, fl": [
+    28.54,
+    -81.38,
+    "Orlando, FL, USA",
+    "Americas"
+  ],
+  "usa / minneapolis, mn": [
+    44.98,
+    -93.27,
+    "Minneapolis, MN, USA",
+    "Americas"
+  ],
+  "cleveland, usa": [
+    41.5,
+    -81.69,
+    "Cleveland, OH, USA",
+    "Americas"
+  ],
+  "brooklyn, usa": [
+    40.68,
+    -73.94,
+    "Brooklyn, NY, USA",
+    "Americas"
+  ],
+  "durham, nc, usa": [
+    35.99,
+    -78.9,
+    "Durham, NC, USA",
+    "Americas"
+  ],
+  "reston virginia usa": [
+    38.96,
+    -77.34,
+    "Reston, VA, USA",
+    "Americas"
+  ],
+  "miami, usa": [
+    25.76,
+    -80.19,
+    "Miami, FL, USA",
+    "Americas"
+  ],
+  "saskatoon": [
+    52.13,
+    -106.67,
+    "Saskatoon, Canada",
+    "Americas"
+  ],
+  "richmond bc, canada": [
+    49.17,
+    -123.14,
+    "Richmond, BC, Canada",
+    "Americas"
+  ],
+  "mexico city": [
+    19.43,
+    -99.13,
+    "Mexico City, Mexico",
+    "Americas"
+  ],
+  "mexico city, mexico": [
+    19.43,
+    -99.13,
+    "Mexico City, Mexico",
+    "Americas"
+  ],
+  "peru/lima": [
+    -12.05,
+    -77.04,
+    "Lima, Peru",
+    "Americas"
+  ],
+  "chile": [
+    -33.45,
+    -70.67,
+    "Chile",
+    "Americas"
+  ],
+  "greece": [
+    39.07,
+    21.82,
+    "Greece",
+    "Europe"
+  ],
+  "thessaloniki, greece": [
+    40.64,
+    22.94,
+    "Thessaloniki, Greece",
+    "Europe"
+  ],
+  "greece / kastoria": [
+    40.52,
+    21.27,
+    "Kastoria, Greece",
+    "Europe"
+  ],
+  "athens": [
+    37.98,
+    23.73,
+    "Athens, Greece",
+    "Europe"
+  ],
+  "marseille, france": [
+    43.3,
+    5.37,
+    "Marseille, France",
+    "Europe"
+  ],
+  "toulon": [
+    43.12,
+    5.93,
+    "Toulon, France",
+    "Europe"
+  ],
+  "barcelona, spain": [
+    41.39,
+    2.17,
+    "Barcelona, Spain",
+    "Europe"
+  ],
+  "milan": [
+    45.46,
+    9.19,
+    "Milan, Italy",
+    "Europe"
+  ],
+  "italy , milan": [
+    45.46,
+    9.19,
+    "Milan, Italy",
+    "Europe"
+  ],
+  "napoli (italy)": [
+    40.85,
+    14.27,
+    "Naples, Italy",
+    "Europe"
+  ],
+  "italia": [
+    42.5,
+    12.5,
+    "Italy",
+    "Europe"
+  ],
+  "italy": [
+    42.5,
+    12.5,
+    "Italy",
+    "Europe"
+  ],
+  "italy, agrigento": [
+    37.31,
+    13.58,
+    "Agrigento, Italy",
+    "Europe"
+  ],
+  "romania / bucharest": [
+    44.43,
+    26.1,
+    "Bucharest, Romania",
+    "Europe"
+  ],
+  "romania/ focșani": [
+    45.7,
+    27.18,
+    "Focșani, Romania",
+    "Europe"
+  ],
+  "croatia, zagreb": [
+    45.81,
+    15.98,
+    "Zagreb, Croatia",
+    "Europe"
+  ],
+  "slovenia, eu": [
+    46.15,
+    14.99,
+    "Slovenia",
+    "Europe"
+  ],
+  "porto, portugal": [
+    41.15,
+    -8.61,
+    "Porto, Portugal",
+    "Europe"
+  ],
+  "budapest, hungary": [
+    47.5,
+    19.04,
+    "Budapest, Hungary",
+    "Europe"
+  ],
+  "amsterdam, the netherlands": [
+    52.37,
+    4.9,
+    "Amsterdam, Netherlands",
+    "Europe"
+  ],
+  "germany, lübeck": [
+    53.87,
+    10.69,
+    "Lübeck, Germany",
+    "Europe"
+  ],
+  "imst": [
+    47.24,
+    10.74,
+    "Imst, Austria",
+    "Europe"
+  ],
+  "switzerland /montreux": [
+    46.43,
+    6.91,
+    "Montreux, Switzerland",
+    "Europe"
+  ],
+  "helsinki, finland": [
+    60.17,
+    24.94,
+    "Helsinki, Finland",
+    "Europe"
+  ],
+  "linköping, swedem": [
+    58.41,
+    15.62,
+    "Linköping, Sweden",
+    "Europe"
+  ],
+  "sosnowiec, poland": [
+    50.29,
+    19.1,
+    "Sosnowiec, Poland",
+    "Europe"
+  ],
+  "krakow, poland": [
+    50.06,
+    19.94,
+    "Kraków, Poland",
+    "Europe"
+  ],
+  "ukraine, kyiv": [
+    50.45,
+    30.52,
+    "Kyiv, Ukraine",
+    "Europe"
+  ],
+  "russia, moscow": [
+    55.76,
+    37.62,
+    "Moscow, Russia",
+    "Europe"
+  ],
+  "cyprus": [
+    35.13,
+    33.43,
+    "Cyprus",
+    "Europe"
+  ],
+  "paphos, cyprus": [
+    34.78,
+    32.42,
+    "Paphos, Cyprus",
+    "Europe"
+  ],
+  "i̇zmir türkiye": [
+    38.42,
+    27.14,
+    "İzmir, Türkiye",
+    "Asia"
+  ],
+  "i̇zmir,türkiye": [
+    38.42,
+    27.14,
+    "İzmir, Türkiye",
+    "Asia"
+  ],
+  "i̇zmir, türkiye": [
+    38.42,
+    27.14,
+    "İzmir, Türkiye",
+    "Asia"
+  ],
+  "çanakkale / turkey": [
+    40.15,
+    26.41,
+    "Çanakkale, Türkiye",
+    "Asia"
+  ],
+  "istanbul, turkey": [
+    41.01,
+    28.98,
+    "Istanbul, Türkiye",
+    "Asia"
+  ],
+  "i̇stanbul, türkiye": [
+    41.01,
+    28.98,
+    "Istanbul, Türkiye",
+    "Asia"
+  ],
+  "jerusalem": [
+    31.77,
+    35.21,
+    "Jerusalem",
+    "Asia"
+  ],
+  "jerusalem, israel": [
+    31.77,
+    35.21,
+    "Jerusalem, Israel",
+    "Asia"
+  ],
+  "jableh, syria": [
+    35.36,
+    35.93,
+    "Jableh, Syria",
+    "Asia"
+  ],
+  "yerevan, armenia": [
+    40.18,
+    44.51,
+    "Yerevan, Armenia",
+    "Asia"
+  ],
+  "almaty, kazakhstan": [
+    43.24,
+    76.89,
+    "Almaty, Kazakhstan",
+    "Asia"
+  ],
+  "mumba, india": [
+    19.08,
+    72.88,
+    "Mumbai, India",
+    "Asia"
+  ],
+  "kolkata, india": [
+    22.57,
+    88.36,
+    "Kolkata, India",
+    "Asia"
+  ],
+  "india, varanasi": [
+    25.32,
+    82.99,
+    "Varanasi, India",
+    "Asia"
+  ],
+  "chennai, india": [
+    13.08,
+    80.27,
+    "Chennai, India",
+    "Asia"
+  ],
+  "rajkot, india": [
+    22.3,
+    70.8,
+    "Rajkot, India",
+    "Asia"
+  ],
+  "hangzhou city, zhejiang province, china": [
+    30.27,
+    120.16,
+    "Hangzhou, China",
+    "Asia"
+  ],
+  "japan okinawa": [
+    26.33,
+    127.8,
+    "Okinawa, Japan",
+    "Asia"
+  ],
+  "south africa johannesburg": [
+    -26.2,
+    28.05,
+    "Johannesburg, South Africa",
+    "Africa"
+  ],
+  "senegal / dakar": [
+    14.72,
+    -17.47,
+    "Dakar, Senegal",
+    "Africa"
+  ],
+  "alexandria, egypt": [
+    31.2,
+    29.92,
+    "Alexandria, Egypt",
+    "Africa"
+  ],
+  "nomadic": [
+    25.0,
+    -40.0,
+    "Nomadic",
+    "Nomadic"
+  ]
+}

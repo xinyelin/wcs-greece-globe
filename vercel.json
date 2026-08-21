@@ -33,5 +33,16 @@
       "source": "/classic",
       "destination": "/classic.html"
     }
-  ]
+  ],
+  "crons": [
+    {
+      "path": "/api/sync-sheet",
+      "schedule": "0 6 * * 1"
+    }
+  ],
+  "functions": {
+    "api/sync-sheet.js": {
+      "maxDuration": 60
+    }
+  }
 }
