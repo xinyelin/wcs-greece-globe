@@ -23,7 +23,9 @@ Artist data starts as a Google Form / Sheet. Two ways it reaches the site:
 
 New locations the sheet introduces that aren't yet in `data/geo.json` are skipped from the map (not from a crash) and logged to Redis under `sync:pending` — check there periodically and add the missing city to `data/geo.json` (the single shared file both the manual build and the auto-sync read from) so the next sync picks it up.
 
+Every run also appends a short entry (artist count, any pending cities, whether anything was committed) to the [Gallery｜Weekly Data Sync Log](https://app.notion.com/p/3c4777b2012981df8d36c12aef515c99) Notion page, if `NOTION_TOKEN` / `NOTION_LOG_PAGE_ID` are set. This is best-effort — a Notion outage never fails the sync itself.
+
 **Env vars required for auto-sync** (Vercel → Project Settings → Environment Variables):
-`GOOGLE_SHEET_ID`, `GOOGLE_SA_EMAIL`, `GOOGLE_SA_PRIVATE_KEY`, `GITHUB_TOKEN`, `GITHUB_REPO` (defaults to `xinyelin/wcs-greece-globe`), `CRON_SECRET` — plus the existing `KV_REST_API_URL`/`KV_REST_API_TOKEN` used by voting. Without these, `/api/sync-sheet` returns 503 and the site keeps running on whatever was last committed.
+`GOOGLE_SHEET_ID`, `GOOGLE_SA_EMAIL`, `GOOGLE_SA_PRIVATE_KEY`, `GITHUB_TOKEN`, `GITHUB_REPO` (defaults to `xinyelin/wcs-greece-globe`), `CRON_SECRET` — plus the existing `KV_REST_API_URL`/`KV_REST_API_TOKEN` used by voting. Without these, `/api/sync-sheet` returns 503 and the site keeps running on whatever was last committed. `NOTION_TOKEN` / `NOTION_LOG_PAGE_ID` are optional — the sync still runs and commits without them, it just skips the log entry.
 
 This Vercel project is connected to this GitHub repo (Settings → Git), so any push to `main` — from the weekly sync or a manual commit — redeploys automatically.

@@ -17,6 +17,8 @@ const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 const GITHUB_REPO = process.env.GITHUB_REPO || "xinyelin/wcs-greece-globe";
 const KV_URL = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
 const KV_TOKEN = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+const NOTION_TOKEN = process.env.NOTION_TOKEN;
+const NOTION_LOG_PAGE_ID = process.env.NOTION_LOG_PAGE_ID;
 
 function b64url(input) {
   return Buffer.from(input).toString("base64").replace(/=+$/, "").replace(/\+/g, "-").replace(/\//g, "_");
@@ -141,6 +143,43 @@ async function redis(cmd) {
   return (await r.json()).result;
 }
 
+function rt(text) {
+  return [{ type: "text", text: { content: text } }];
+}
+
+// best-effort: a Notion outage should never fail the sync itself
+async function logToNotion({ artistCount, pending, committed }) {
+  if (!NOTION_TOKEN || !NOTION_LOG_PAGE_ID) return false;
+  const today = new Date().toISOString().slice(0, 10);
+  const children = [
+    { object: "block", type: "heading_3", heading_3: { rich_text: rt(`${today} · auto-sync`) } },
+    { object: "block", type: "bulleted_list_item", bulleted_list_item: { rich_text: rt(`艺术家总数：${artistCount}`) } },
+    {
+      object: "block",
+      type: "bulleted_list_item",
+      bulleted_list_item: {
+        rich_text: rt(
+          pending.length
+            ? `待处理城市（未匹配，需要人工补经纬度）：${pending.map((p) => `${p.name} — ${p.rawLocation}`).join("；")}`
+            : "待处理城市：无"
+        ),
+      },
+    },
+    { object: "block", type: "bulleted_list_item", bulleted_list_item: { rich_text: rt(`是否有新提交：${committed ? "是" : "否"}`) } },
+    { object: "block", type: "divider", divider: {} },
+  ];
+  const r = await fetch(`https://api.notion.com/v1/blocks/${NOTION_LOG_PAGE_ID}/children`, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${NOTION_TOKEN}`,
+      "Notion-Version": "2022-06-28",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ children }),
+  });
+  return r.ok;
+}
+
 module.exports = async (req, res) => {
   const auth = req.headers.authorization || "";
   if (!process.env.CRON_SECRET || auth !== `Bearer ${process.env.CRON_SECRET}`) {
@@ -181,11 +220,15 @@ module.exports = async (req, res) => {
     await redis(["SET", "sync:artistCount", String(artists.length)]);
     await redis(["SET", "sync:pending", JSON.stringify(pending)]);
 
+    const committed = changed.some(Boolean);
+    const notionLogged = await logToNotion({ artistCount: artists.length, pending, committed }).catch(() => false);
+
     return res.status(200).json({
       ok: true,
       artists: artists.length,
       pendingLocations: pending,
-      committed: changed.some(Boolean),
+      committed,
+      notionLogged,
     });
   } catch (e) {
     return res.status(500).json({ error: String(e && e.message || e) });
