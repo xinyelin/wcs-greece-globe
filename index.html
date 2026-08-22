@@ -915,7 +915,7 @@ function esc(s) {
 // 0 → 100 over the hold; if assets are genuinely slow, the star waits at
 // 95% until they arrive
 const LOADING_SHOWN_AT = performance.now();
-const LOADING_MIN_MS = 3000;
+const LOADING_MIN_MS = 2000;
 let loadingAssetsReady = false;
 function finishLoading() {
   loadingAssetsReady = true;
