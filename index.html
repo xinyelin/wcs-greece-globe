@@ -209,14 +209,19 @@
   /* ---------- stats + legend ---------- */
   .meta-block{position:absolute;bottom:40px;left:52px;z-index:5;animation:rise 1.2s .35s ease both;}
   .stats{display:flex;gap:36px;}
+  .stat{
+    background:none;border:none;padding:0;font-family:inherit;text-align:left;cursor:pointer;
+  }
   .stat b{
     display:block;font-family:'Fraunces',Georgia,serif;font-weight:300;
-    font-size:34px;color:var(--marble);line-height:1;
+    font-size:34px;color:var(--marble);line-height:1;transition:color .2s;
   }
   .stat span{
     display:block;margin-top:6px;font-size:10px;letter-spacing:0.3em;
-    text-transform:uppercase;color:var(--mist);
+    text-transform:uppercase;color:var(--mist);transition:color .2s;
   }
+  .stat:hover b,.stat:focus-visible b{color:var(--gold);}
+  .stat:hover span,.stat:focus-visible span{color:var(--gold);}
   .hint{
     position:absolute;bottom:40px;left:50%;z-index:5;
     font-size:11px;letter-spacing:0.24em;text-transform:uppercase;color:var(--mist);
@@ -265,7 +270,8 @@
   .artwork .medium{
     font-size:10px;letter-spacing:0.32em;text-transform:uppercase;color:var(--gold);
   }
-  #panel-detail,#panel-list{display:flex;flex-direction:column;gap:14px;}
+  #panel-detail,#panel-list,#panel-group{display:flex;flex-direction:column;gap:14px;}
+  #panel-detail[hidden],#panel-list[hidden],#panel-group[hidden]{display:none;}
   .panel-eyebrow{
     font-size:10px;letter-spacing:0.32em;text-transform:uppercase;color:var(--gold);margin-top:4px;
   }
@@ -308,6 +314,19 @@
   .row-detail-inner>:last-child{margin-bottom:18px;}
   .artwork.mini{min-height:110px;padding:18px;}
   .artwork.mini .title{font-size:20px;}
+  /* nested mini-list of artists inside an expanded city/country row */
+  .group-artists{display:flex;flex-direction:column;}
+  .group-artist-link{
+    background:none;border:none;border-top:1px solid rgba(212,180,131,0.1);
+    width:100%;text-align:left;font-family:inherit;cursor:pointer;
+    padding:9px 2px;display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+    color:var(--marble);font-size:13.5px;transition:color .2s;
+  }
+  .group-artist-link:hover,.group-artist-link:focus-visible{color:var(--gold);}
+  .group-artist-link i{
+    font-style:italic;color:var(--mist);font-size:12px;flex:none;
+    max-width:55%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
   .panel-name{
     font-family:'Fraunces',Georgia,serif;font-weight:300;font-size:32px;line-height:1.1;color:var(--marble);
   }
@@ -480,9 +499,9 @@
 
   <div class="meta-block">
     <div class="stats">
-      <div class="stat"><b id="stat-artists">—</b><span>Artists</span></div>
-      <div class="stat"><b id="stat-locations">—</b><span>Cities</span></div>
-      <div class="stat"><b id="stat-countries">—</b><span>Countries</span></div>
+      <button class="stat" id="stat-artists-btn" aria-label="See every artist"><b id="stat-artists">—</b><span>Artists</span></button>
+      <button class="stat" id="stat-locations-btn" aria-label="See every city"><b id="stat-locations">—</b><span>Cities</span></button>
+      <button class="stat" id="stat-countries-btn" aria-label="See every country"><b id="stat-countries">—</b><span>Countries</span></button>
     </div>
   </div>
 
@@ -528,10 +547,17 @@
     <button class="panel-close" id="panel-close" aria-label="Close">✕</button>
 
     <div id="panel-list" hidden>
-      <div class="panel-eyebrow">A Gathering of Lights</div>
+      <div class="panel-eyebrow" id="list-eyebrow">A Gathering of Lights</div>
       <div class="panel-name" id="list-city"></div>
       <div class="panel-country" id="list-count"></div>
       <div class="list-rows" id="list-rows"></div>
+    </div>
+
+    <div id="panel-group" hidden>
+      <div class="panel-eyebrow" id="group-eyebrow"></div>
+      <div class="panel-name" id="group-title"></div>
+      <div class="panel-country" id="group-subtitle"></div>
+      <div class="list-rows" id="group-rows"></div>
     </div>
 
     <div id="panel-detail">
@@ -1075,6 +1101,7 @@ function clearActive() {
 }
 
 const listWrap = document.getElementById("panel-list");
+const groupWrap = document.getElementById("panel-group");
 const detailWrap = document.getElementById("panel-detail");
 
 // lights up an artist's marker and their thread home, without touching the panel
@@ -1109,14 +1136,20 @@ function inlineDetailHTML(a) {
     <div class="panel-bio">${esc(a.bio || "—")}</div>${statement}`;
 }
 
-function openListPanel(items) {
+function openListPanel(items, opts) {
   clearActive();
+  opts = opts || {};
 
-  const locs = new Set(items.map(a => a.location));
-  document.getElementById("list-city").textContent =
-    locs.size === 1 ? items[0].location : items[0].location + " & nearby";
+  document.getElementById("list-eyebrow").textContent = opts.eyebrow || "A Gathering of Lights";
+  if (opts.title) {
+    document.getElementById("list-city").textContent = opts.title;
+  } else {
+    const locs = new Set(items.map(a => a.location));
+    document.getElementById("list-city").textContent =
+      locs.size === 1 ? items[0].location : items[0].location + " & nearby";
+  }
   document.getElementById("list-count").textContent =
-    items.length + " artists shine here — choose one to meet";
+    opts.subtitle || (items.length + " artists shine here — choose one to meet");
 
   const rows = document.getElementById("list-rows");
   rows.innerHTML = items.map(a => `
@@ -1165,16 +1198,106 @@ function openListPanel(items) {
   });
 
   detailWrap.hidden = true;
+  groupWrap.hidden = true;
   listWrap.hidden = false;
   panel.scrollTop = 0;
   panel.classList.add("open");
   controls.autoRotate = false;
 }
 
+// groups every artist by `key` (location or country) into an accordion of
+// their own; expanding one reveals its artists as a mini clickable list
+function openGroupedPanel(key, eyebrow, title) {
+  clearActive();
+
+  const groups = new Map();
+  ARTISTS.forEach(a => {
+    const k = a[key];
+    if (!k) return; // e.g. nomadic artists have no fixed country
+    if (!groups.has(k)) groups.set(k, []);
+    groups.get(k).push(a);
+  });
+  const sorted = [...groups.entries()].sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]));
+  const groupedTotal = sorted.reduce((n, [, items]) => n + items.length, 0);
+
+  document.getElementById("group-eyebrow").textContent = eyebrow;
+  document.getElementById("group-title").textContent = title;
+  document.getElementById("group-subtitle").textContent =
+    `${sorted.length} ${eyebrow.toLowerCase()} — ${groupedTotal} artists`;
+
+  const rows = document.getElementById("group-rows");
+  rows.innerHTML = sorted.map(([name, items], gi) => `
+    <div class="list-item" data-g="${gi}">
+      <button class="list-row" aria-expanded="false">
+        <span class="lr-name">${esc(name)}</span>
+        <span class="lr-loc">${items.length} artist${items.length > 1 ? "s" : ""}</span>
+        <span class="lr-chevron" aria-hidden="true">＋</span>
+      </button>
+      <div class="row-detail"><div class="row-detail-inner"></div></div>
+    </div>`).join("");
+
+  let openItem = null;
+  rows.querySelectorAll(".list-item").forEach((item, gi) => {
+    const btn = item.querySelector(".list-row");
+    const items = sorted[gi][1];
+    btn.addEventListener("click", () => {
+      if (openItem === item) {
+        item.classList.remove("open");
+        btn.setAttribute("aria-expanded", "false");
+        openItem = null;
+        return;
+      }
+      if (openItem) {
+        openItem.classList.remove("open");
+        openItem.querySelector(".list-row").setAttribute("aria-expanded", "false");
+      }
+      const inner = item.querySelector(".row-detail-inner");
+      if (!inner.innerHTML) {
+        inner.innerHTML = `<div class="group-artists">${items.map(a =>
+          `<button class="group-artist-link" data-i="${a.index}">${esc(a.name)}<i>${esc(a.title || "Untitled")}</i></button>`
+        ).join("")}</div>`;
+        inner.querySelectorAll(".group-artist-link").forEach(link => {
+          link.addEventListener("click", () => {
+            const artist = ARTISTS.find(x => x.index === Number(link.dataset.i));
+            const sprite = markers.find(m => m.userData.index === artist.index);
+            openPanel(artist, sprite);
+          });
+        });
+      }
+      item.classList.add("open");
+      btn.setAttribute("aria-expanded", "true");
+      openItem = item;
+      setTimeout(() => btn.scrollIntoView({ behavior: "smooth", block: "start" }), 200);
+    });
+  });
+
+  listWrap.hidden = true;
+  detailWrap.hidden = true;
+  groupWrap.hidden = false;
+  panel.scrollTop = 0;
+  panel.classList.add("open");
+  controls.autoRotate = false;
+}
+
+document.getElementById("stat-artists-btn").addEventListener("click", () => {
+  openListPanel(ARTISTS, {
+    eyebrow: "All Artists",
+    title: "Every Light, One by One",
+    subtitle: `${ARTISTS.length} artists — choose one to meet`,
+  });
+});
+document.getElementById("stat-locations-btn").addEventListener("click", () => {
+  openGroupedPanel("location", "Cities", "Where the Light Comes From");
+});
+document.getElementById("stat-countries-btn").addEventListener("click", () => {
+  openGroupedPanel("country", "Countries", "A World of Answers");
+});
+
 function openPanel(artist, sprite) {
   spotlightArtist(sprite);
 
   listWrap.hidden = true;
+  groupWrap.hidden = true;
   detailWrap.hidden = false;
 
   document.getElementById("panel-title").textContent = artist.title || "Untitled";
