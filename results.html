@@ -76,10 +76,11 @@ async function load() {
     if (subscribers.length) html += ' · <a href="#" id="copy-subs" style="color:var(--gold)">copy all</a>';
     html += "</div>";
     if (subscribers.length) {
-      html += '<table><tr><th></th><th>Email</th><th style="text-align:right">Joined</th></tr>';
+      html += '<table><tr><th></th><th>Email</th><th style="text-align:right">Joined</th><th></th></tr>';
       subscribers.forEach((s, i) => {
         const d = s.ts ? s.ts.slice(0, 10) : "—";
-        html += `<tr><td class="rank">${i + 1}</td><td>${s.email.replace(/</g, "&lt;")}</td><td style="text-align:right;color:var(--mist);font-size:12px">${d}</td></tr>`;
+        const safeEmail = s.email.replace(/</g, "&lt;");
+        html += `<tr><td class="rank">${i + 1}</td><td>${safeEmail}</td><td style="text-align:right;color:var(--mist);font-size:12px">${d}</td><td style="text-align:right"><a href="#" class="remove-sub" data-email="${safeEmail}" style="color:var(--mist);font-size:11px">remove</a></td></tr>`;
       });
       html += "</table>";
     }
@@ -89,6 +90,19 @@ async function load() {
       e.preventDefault();
       navigator.clipboard.writeText(subscribers.map(s => s.email).join("\n"));
       copyBtn.textContent = "copied ✓";
+    });
+    out.querySelectorAll(".remove-sub").forEach(link => {
+      link.addEventListener("click", async (e) => {
+        e.preventDefault();
+        if (!confirm(`Remove ${link.dataset.email} from the subscriber list?`)) return;
+        link.textContent = "removing…";
+        const r = await fetch("/api/results", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ key, action: "remove_sub", email: link.dataset.email }),
+        });
+        if (r.ok) load(); else link.textContent = "failed";
+      });
     });
   } catch (e) {
     out.innerHTML = '<div class="err">Could not load results.</div>';

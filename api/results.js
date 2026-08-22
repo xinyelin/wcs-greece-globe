@@ -30,6 +30,20 @@ module.exports = async (req, res) => {
     }
   }
 
+  // POST + action=remove_sub drops one address (a bounced address, a test
+  // signup, a removal request) without touching anyone else's row
+  if (req.method === "POST" && req.body && req.body.action === "remove_sub") {
+    const email = String(req.body.email || "").trim().toLowerCase();
+    if (!email) return res.status(400).json({ error: "Missing email" });
+    try {
+      await redis(["SREM", "subs", email]);
+      await redis(["HDEL", "subs:ts", email]);
+      return res.status(200).json({ ok: true, removed: email });
+    } catch (e) {
+      return res.status(500).json({ error: "Storage error" });
+    }
+  }
+
   try {
     const flat = (await redis(["HGETALL", "votes"])) || [];
     const votes = {};
