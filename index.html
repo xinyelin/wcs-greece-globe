@@ -559,31 +559,27 @@
     .eyebrow{font-size:13px;letter-spacing:0.24em;}
     .eyebrow .salon{font-size:10px;letter-spacing:0.3em;margin-top:2px;}
     .chapter{font-size:13px;margin-top:10px;}
-    /* the phone headline owns its space: dek and diplomacy both yield,
-       so the title can breathe at 40px over two natural lines */
-    h1{font-size:40px;line-height:1.05;}
-    .dek{display:none;}
-    .diplomacy{display:none;}
+    h1{font-size:38px;line-height:1.05;}
+    .dek{display:block;font-size:12.5px;line-height:1.6;margin-top:10px;max-width:36ch;}
+    .diplomacy{margin-top:12px;padding-top:10px;font-size:9.5px;letter-spacing:0.2em;line-height:1.9;}
     .social-row{margin-top:12px;gap:16px;}
     .social-row svg{width:15px;height:15px;}
     .meta-block{left:16px;bottom:20px;}
-    /* the block sits one storey above the stats line, spanning the full width
-       so the buttons pin cleanly to the right edge without clipping */
-    .mission-block{left:16px;right:16px;bottom:58px;max-width:none;gap:8px;}
-    .donate-btn{font-size:9px;letter-spacing:0.2em;padding:11px 22px;}
-    .follow-btn{font-size:9px;letter-spacing:0.22em;padding:9px 14px;}
+    /* one bottom bar: stats hold the left corner, the two actions sit
+       side by side in the right corner, all on the same baseline */
+    .mission-block{right:16px;bottom:20px;max-width:none;flex-direction:row;align-items:center;gap:8px;}
+    .donate-btn{font-size:9px;letter-spacing:0.2em;padding:11px 16px;}
+    .follow-btn{font-size:9px;letter-spacing:0.22em;padding:10px 12px;}
     .follow-btn .fl-long{display:none;}
     .follow-btn .fl-short{display:inline;}
     #follow-form{gap:10px;margin-top:26px;flex-direction:column;align-items:stretch;}
     #follow-email{font-size:18px;}
     #follow-submit{padding:12px 18px;}
-    /* three tiny stacked stats collapse into one legible caps line:
-       117 Artists · 87 Cities · 37 Countries — still three tap targets */
-    .stats{gap:0;align-items:baseline;}
-    .stat{display:flex;align-items:baseline;gap:5px;}
-    .stat b{font-size:16px;}
-    .stat span{margin-top:0;font-size:9px;letter-spacing:0.14em;}
-    .stat:not(:last-child)::after{content:"·";color:var(--mist);opacity:.5;margin:0 9px;font-size:12px;}
+    /* compact three-column stats: number over label, narrow enough to
+       share the bottom bar with the two buttons on the right */
+    .stats{gap:13px;}
+    .stat b{font-size:17px;}
+    .stat span{margin-top:2px;font-size:7px;letter-spacing:0.12em;}
     #artist-panel{width:100%;padding:16px 22px 40px;}
     .panel-close{
       font-size:26px;padding:10px 12px;margin-right:-12px;
