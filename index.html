@@ -1297,7 +1297,7 @@ ARTISTS.forEach((artist) => {
 // most platforms, so this is the only honest way to make the threads heavier
 const ATHENS = latLngToVector3(37.98, 23.73, RADIUS * 1.015);
 const arcCurves = new Map();
-const THREAD_R = 0.0035;
+const THREAD_R = 0.0028;
 const tubePos = [], tubeIdx = [];
 let vertBase = 0;
 markers.forEach((m) => {
@@ -1334,7 +1334,7 @@ const arcGeo = new THREE.BufferGeometry();
 arcGeo.setAttribute("position", new THREE.Float32BufferAttribute(tubePos, 3));
 arcGeo.setIndex(tubeIdx);
 globe.add(new THREE.Mesh(arcGeo, new THREE.MeshBasicMaterial({
-  color: 0xe8c894, transparent: true, opacity: 0.16,
+  color: 0xe8c894, transparent: true, opacity: 0.12,
   blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide,
 })));
 
