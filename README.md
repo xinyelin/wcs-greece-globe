@@ -25,3 +25,5 @@ New locations the sheet introduces that aren't yet in `data/geo.json` are skippe
 
 **Env vars required for auto-sync** (Vercel → Project Settings → Environment Variables):
 `GOOGLE_SHEET_ID`, `GOOGLE_SA_EMAIL`, `GOOGLE_SA_PRIVATE_KEY`, `GITHUB_TOKEN`, `GITHUB_REPO` (defaults to `xinyelin/wcs-greece-globe`), `CRON_SECRET` — plus the existing `KV_REST_API_URL`/`KV_REST_API_TOKEN` used by voting. Without these, `/api/sync-sheet` returns 503 and the site keeps running on whatever was last committed.
+
+This Vercel project is connected to this GitHub repo (Settings → Git), so any push to `main` — from the weekly sync or a manual commit — redeploys automatically.
