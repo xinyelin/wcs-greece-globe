@@ -606,6 +606,23 @@
     .artwork{min-height:130px;}
     .vote-btn{padding:15px 16px;}
   }
+  /* tablet portrait (iPad): a grand phone, not a squeezed desktop —
+     the label block gets room to breathe and the corners loosen up */
+  @media (min-width:701px) and (max-width:900px){
+    .label-block{left:40px;top:40px;max-width:440px;}
+    h1{font-size:58px;}
+    .search-btn{top:40px;right:40px;}
+    .search-btn.culture-btn{right:100px;}
+    .meta-block{left:40px;bottom:40px;}
+    .mission-block{right:40px;bottom:40px;}
+  }
+  /* tablet landscape / small desktop: the headline scales to the room */
+  @media (min-width:901px) and (max-width:1200px){
+    h1{font-size:58px;}
+    .label-block{max-width:380px;}
+    .eyebrow{font-size:15px;}
+    .sig-mark img{width:64px;}
+  }
 </style>
 </head>
 <body>
@@ -1112,15 +1129,25 @@ const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 10
 // viewports pull back, and only as far as fitting the sphere actually requires.
 function cameraDistanceForAspect() {
   const halfV = THREE.MathUtils.degToRad(camera.fov / 2);
-  const fitWidth = 2.15 / (Math.tan(halfV) * camera.aspect);
-  return Math.min(11.5, Math.max(5.65, fitWidth));
+  // tablets in portrait (aspect ~0.62–0.9) pull the camera back further:
+  // a wall-to-wall globe under a tall text stack reads as crowding there,
+  // so it floats at ~60% width between the text and the bottom actions
+  const halfW = (camera.aspect >= 0.62 && camera.aspect < 0.9) ? 3.4 : 2.15;
+  const fitWidth = halfW / (Math.tan(halfV) * camera.aspect);
+  // landscape tablets / small laptops also step back, so the type column
+  // on the left clears the globe instead of sitting on its bright rim
+  const floor = (camera.aspect >= 0.9 && camera.aspect < 1.55) ? 6.8 : 5.65;
+  return Math.min(11.5, Math.max(floor, fitWidth));
 }
 camera.position.set(0, 0.4, cameraDistanceForAspect());
 
 // Editorial composition: subject right, type left. Portrait keeps it centred
 // horizontally but drops it, so the title stack above gets room to breathe.
 function globeOffsetX() {
-  return camera.aspect > 1.3 ? 0.78 : 0;
+  if (camera.aspect <= 1.3) return 0;
+  // the tablet band pushes further right — its viewport is too narrow for
+  // the desktop offset to clear the text column
+  return camera.aspect < 1.55 ? 1.2 : 0.78;
 }
 function globeOffsetY() {
   return camera.aspect < 0.9 ? -0.65 : 0;
@@ -1129,7 +1156,10 @@ function globeOffsetY() {
 // it on screen; aiming the camera ABOVE the globe is what sinks it toward
 // the bottom-corner actions in portrait
 function lookAboveY() {
-  return camera.aspect < 0.9 ? 0.805 : 0;
+  if (camera.aspect >= 0.9) return 0;
+  // tablet portrait: the smaller floating globe sinks below the tall text
+  // stack; phones keep their tuned sink
+  return camera.aspect >= 0.62 ? 1.15 : 0.805;
 }
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
