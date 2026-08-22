@@ -636,10 +636,10 @@ const MARKER_ACTIVE = IS_TOUCH ? 0.22 : 0.17;
 const GLOBE_MODE = new URLSearchParams(location.search).get("globe");
 const USE_TEXTURE = GLOBE_MODE !== "points";
 // the graded navy-and-gold earth is the default; ?globe=natural restores the photograph
-// desktop gets the 3600x1800 grade; touch devices load the 2048 cut of the
-// same grade (a third of the bytes, and small screens can't resolve more)
-const TEXTURE_SRC = GLOBE_MODE === "natural" ? "earth.jpg"
-  : IS_TOUCH ? "earth-gilded-2k.jpg" : "earth-gilded-hd.jpg";
+// the gilded duotone won out over a more literal NASA regrade (tried and
+// reverted 2026-08 — the flat, engraving-like land reads more gallery, less
+// screensaver); earth-gilded-hd/-2k.jpg stay in the repo if it's revisited
+const TEXTURE_SRC = GLOBE_MODE === "natural" ? "earth.jpg" : "earth-gilded.jpg";
 
 document.getElementById("stat-artists").textContent = ARTISTS.length;
 document.getElementById("stat-locations").textContent = new Set(ARTISTS.map(a => a.location)).size;
