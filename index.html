@@ -561,8 +561,7 @@
     .chapter{font-size:13px;margin-top:10px;}
     h1{font-size:38px;line-height:1.05;}
     .dek{display:block;font-size:12.5px;line-height:1.6;margin-top:10px;max-width:36ch;}
-    .diplomacy{margin-top:12px;padding-top:10px;font-size:9.5px;letter-spacing:0.2em;line-height:1.9;}
-    .diplomacy br,.diplomacy span{display:none;} /* the quote yields on phones */
+    .diplomacy{display:none;}
     .social-row{margin-top:12px;gap:16px;}
     .social-row svg{width:15px;height:15px;}
     .meta-block{left:16px;bottom:20px;}
@@ -1099,7 +1098,7 @@ function globeOffsetY() {
 // it on screen; aiming the camera ABOVE the globe is what sinks it toward
 // the bottom-corner actions in portrait
 function lookAboveY() {
-  return camera.aspect < 0.9 ? 0.87 : 0;
+  return camera.aspect < 0.9 ? 0.7 : 0;
 }
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
