@@ -56,18 +56,22 @@
     from{opacity:0;transform:scale(.95) translateY(8px);}
     to{opacity:1;transform:scale(1) translateY(0);}
   }
+  #loading .loading-track{position:relative;animation:rise 1s .6s ease both;}
   #loading .loading-bar{
     width:170px;height:1px;background:rgba(212,180,131,0.18);
     overflow:hidden;position:relative;
-    animation:rise 1s .6s ease both;
   }
   #loading .loading-bar i{
     display:block;height:100%;width:0%;background:var(--gold);
     box-shadow:0 0 9px rgba(212,180,131,0.65);
-    transition:width .3s ease;
   }
-  #loading .loading-bar.indeterminate i{width:36%;animation:sweep 1.35s ease-in-out infinite;}
-  @keyframes sweep{0%{transform:translateX(-260%);}100%{transform:translateX(370%);}}
+  /* the star of light riding the tip of the progress */
+  #loading .loading-star{
+    position:absolute;top:50%;left:0;
+    transform:translate(-50%,-50%);
+    font-size:12px;line-height:1;color:#efd9ab;
+    text-shadow:0 0 8px rgba(212,180,131,0.95),0 0 20px rgba(212,180,131,0.55);
+  }
   #loading .loading-label{
     font-size:10px;letter-spacing:0.32em;text-transform:uppercase;color:var(--mist);
     opacity:0;animation:rise 1s .75s ease both;min-height:12px;
@@ -596,7 +600,10 @@
 <body>
 <div id="loading">
   <img class="loading-mark" src="logo.png" width="336" height="346" alt="One Culture Foundation — World Culture Salon">
-  <div class="loading-bar indeterminate" id="loading-bar"><i id="loading-fill"></i></div>
+  <div class="loading-track">
+    <div class="loading-bar" id="loading-bar"><i id="loading-fill"></i></div>
+    <span class="loading-star" id="loading-star" aria-hidden="true">✦</span>
+  </div>
   <div class="loading-label" id="loading-label">Gathering the light</div>
 </div>
 
@@ -892,25 +899,36 @@ function esc(s) {
 }
 
 // the loading screen is the brand's opening ritual: even when everything is
-// cached and ready in milliseconds, hold it long enough to actually be seen
+// cached and ready in milliseconds, hold it long enough to actually be seen.
+// a star of light rides the bar left to right while the counter climbs
+// 0 → 100 over the hold; if assets are genuinely slow, the star waits at
+// 95% until they arrive
 const LOADING_SHOWN_AT = performance.now();
 const LOADING_MIN_MS = 3000;
+let loadingAssetsReady = false;
 function finishLoading() {
+  loadingAssetsReady = true;
   const wait = Math.max(0, LOADING_MIN_MS - (performance.now() - LOADING_SHOWN_AT));
   setTimeout(() => document.getElementById("loading").classList.add("done"), wait);
 }
 
-// drives the loading screen's bar from real bytes-loaded progress once
-// it's measurable; stays in its gentle indeterminate sweep until then
 function setLoadingProgress(pct) {
-  const bar = document.getElementById("loading-bar");
   const fill = document.getElementById("loading-fill");
+  const star = document.getElementById("loading-star");
   const label = document.getElementById("loading-label");
-  if (!bar || !fill || !label) return;
-  bar.classList.remove("indeterminate");
-  fill.style.width = Math.max(0, Math.min(100, pct)) + "%";
-  label.innerHTML = `Gathering the light <b>${Math.round(pct)}%</b>`;
+  if (!fill || !label) return;
+  const p = Math.max(0, Math.min(100, pct));
+  fill.style.width = p + "%";
+  if (star) star.style.left = p + "%";
+  label.innerHTML = `Gathering the light <b>${Math.round(p)}%</b>`;
 }
+
+(function tickLoading() {
+  const timePct = (performance.now() - LOADING_SHOWN_AT) / LOADING_MIN_MS * 100;
+  const pct = Math.min(timePct, loadingAssetsReady ? 100 : 95);
+  setLoadingProgress(pct);
+  if (pct < 100) requestAnimationFrame(tickLoading);
+})();
 
 // ---------- fallback gallery (no WebGL) ----------
 function showFallback() {
@@ -935,7 +953,6 @@ function showFallback() {
     btn.addEventListener("click", () => submitVote(btn, idx));
   });
   document.body.classList.add("fallback-mode");
-  setLoadingProgress(100);
   finishLoading();
 }
 
@@ -1098,7 +1115,7 @@ function globeOffsetY() {
 // it on screen; aiming the camera ABOVE the globe is what sinks it toward
 // the bottom-corner actions in portrait
 function lookAboveY() {
-  return camera.aspect < 0.9 ? 0.7 : 0;
+  return camera.aspect < 0.9 ? 0.805 : 0;
 }
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
@@ -1186,10 +1203,7 @@ if (USE_TEXTURE) {
     mat.map = tex;
     mat.color.set(0xffffff);
     mat.needsUpdate = true;
-    setLoadingProgress(100);
-  }, (evt) => {
-    if (evt.lengthComputable) setLoadingProgress((evt.loaded / evt.total) * 100);
-  }, () => {});
+  });
   globe.add(new THREE.Mesh(new THREE.SphereGeometry(RADIUS, 96, 96), mat));
 } else {
   // opaque shell so land points on the far side stay hidden
@@ -1896,7 +1910,6 @@ let rotateFrames = 0, rotateCalibrated = REDUCED_MOTION;
 
   if (!shown) {
     shown = true;
-    setLoadingProgress(100);
     finishLoading();
   }
 })();
