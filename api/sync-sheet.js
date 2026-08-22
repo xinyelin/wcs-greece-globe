@@ -167,12 +167,15 @@ module.exports = async (req, res) => {
       artists.map((a) => ({ index: a.index, name: a.name, location: a.location, title: a.title }))
     );
 
+    // sequential, not Promise.all: each Contents API write creates its own
+    // commit on the branch, so writing all three concurrently races them
+    // against each other and 409s
     const message = `Auto-sync: ${artists.length} artists from the submission sheet`;
-    const changed = await Promise.all([
-      commitIfChanged("index.html", indexHtml, message),
-      commitIfChanged("classic.html", classicHtml, message),
-      commitIfChanged("artists-min.json", mini, message),
-    ]);
+    const changed = [
+      await commitIfChanged("index.html", indexHtml, message),
+      await commitIfChanged("classic.html", classicHtml, message),
+      await commitIfChanged("artists-min.json", mini, message),
+    ];
 
     await redis(["SET", "sync:lastRun", new Date().toISOString()]);
     await redis(["SET", "sync:artistCount", String(artists.length)]);
