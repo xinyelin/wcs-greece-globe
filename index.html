@@ -866,7 +866,10 @@ const controls = new THREE.OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.08;
 controls.autoRotate = !REDUCED_MOTION;
-const BASE_ROTATE_SPEED = 0.22; // three.js calibrates this for exactly 60fps
+// touch devices get their own, faster base speed: the globe fills far less
+// of a phone screen, so the same real-world angular speed reads slower there.
+// the fps calibration below then scales whichever base applies.
+const BASE_ROTATE_SPEED = IS_TOUCH ? 0.34 : 0.22; // three.js calibrates this for exactly 60fps
 controls.autoRotateSpeed = BASE_ROTATE_SPEED;
 controls.minDistance = 3.2;
 controls.maxDistance = Math.max(9, cameraDistanceForAspect() + 1.5);
