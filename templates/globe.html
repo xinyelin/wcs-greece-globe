@@ -636,7 +636,10 @@ const MARKER_ACTIVE = IS_TOUCH ? 0.22 : 0.17;
 const GLOBE_MODE = new URLSearchParams(location.search).get("globe");
 const USE_TEXTURE = GLOBE_MODE !== "points";
 // the graded navy-and-gold earth is the default; ?globe=natural restores the photograph
-const TEXTURE_SRC = GLOBE_MODE === "natural" ? "earth.jpg" : "earth-gilded.jpg";
+// desktop gets the 3600x1800 grade; touch devices load the 2048 cut of the
+// same grade (a third of the bytes, and small screens can't resolve more)
+const TEXTURE_SRC = GLOBE_MODE === "natural" ? "earth.jpg"
+  : IS_TOUCH ? "earth-gilded-2k.jpg" : "earth-gilded-hd.jpg";
 
 document.getElementById("stat-artists").textContent = ARTISTS.length;
 document.getElementById("stat-locations").textContent = new Set(ARTISTS.map(a => a.location)).size;
@@ -869,7 +872,7 @@ controls.autoRotate = !REDUCED_MOTION;
 // touch devices get their own, faster base speed: the globe fills far less
 // of a phone screen, so the same real-world angular speed reads slower there.
 // the fps calibration below then scales whichever base applies.
-const BASE_ROTATE_SPEED = IS_TOUCH ? 0.42 : 0.22; // three.js calibrates this for exactly 60fps
+const BASE_ROTATE_SPEED = IS_TOUCH ? 0.42 : 0.17; // three.js calibrates this for exactly 60fps
 controls.autoRotateSpeed = BASE_ROTATE_SPEED;
 controls.minDistance = 3.2;
 controls.maxDistance = Math.max(9, cameraDistanceForAspect() + 1.5);
@@ -1052,9 +1055,13 @@ ARTISTS.forEach((artist) => {
 
 
 // ---------- threads of light returning to Athens (one merged draw call) ----------
+// real geometry (thin tubes), not GL lines: WebGL clamps line width to 1px on
+// most platforms, so this is the only honest way to make the threads heavier
 const ATHENS = latLngToVector3(37.98, 23.73, RADIUS * 1.015);
 const arcCurves = new Map();
-const segPositions = [];
+const THREAD_R = 0.0045;
+const tubePos = [], tubeIdx = [];
+let vertBase = 0;
 markers.forEach((m) => {
   const from = m.position.clone(), to = ATHENS.clone();
   const dist = from.distanceTo(to);
@@ -1063,24 +1070,28 @@ markers.forEach((m) => {
     .multiplyScalar(RADIUS * (1.02 + dist * 0.12));
   const curve = new THREE.QuadraticBezierCurve3(from, mid, to);
   arcCurves.set(m, curve);
-  const p = curve.getPoints(40);
-  for (let i = 0; i < p.length - 1; i++) {
-    segPositions.push(p[i].x, p[i].y, p[i].z, p[i+1].x, p[i+1].y, p[i+1].z);
-  }
+  const tg = new THREE.TubeGeometry(curve, 40, THREAD_R, 3, false);
+  const p = tg.attributes.position.array;
+  for (let i = 0; i < p.length; i++) tubePos.push(p[i]);
+  const idx = tg.index.array;
+  for (let i = 0; i < idx.length; i++) tubeIdx.push(idx[i] + vertBase);
+  vertBase += tg.attributes.position.count;
+  tg.dispose();
 });
 const arcGeo = new THREE.BufferGeometry();
-arcGeo.setAttribute("position", new THREE.Float32BufferAttribute(segPositions, 3));
-globe.add(new THREE.LineSegments(arcGeo, new THREE.LineBasicMaterial({
-  color: 0xe8c894, transparent: true, opacity: 0.13,
-  blending: THREE.AdditiveBlending, depthWrite: false,
+arcGeo.setAttribute("position", new THREE.Float32BufferAttribute(tubePos, 3));
+arcGeo.setIndex(tubeIdx);
+globe.add(new THREE.Mesh(arcGeo, new THREE.MeshBasicMaterial({
+  color: 0xe8c894, transparent: true, opacity: 0.16,
+  blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide,
 })));
 
-// the selected thread is a single separate line, rebuilt on click
-const highlight = new THREE.Line(
+// the selected thread is a single separate tube, rebuilt on click
+const highlight = new THREE.Mesh(
   new THREE.BufferGeometry(),
-  new THREE.LineBasicMaterial({
-    color: 0xf0dcb4, transparent: true, opacity: 0.75,
-    blending: THREE.AdditiveBlending, depthWrite: false,
+  new THREE.MeshBasicMaterial({
+    color: 0xf0dcb4, transparent: true, opacity: 0.8,
+    blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide,
   })
 );
 highlight.visible = false;
@@ -1109,9 +1120,32 @@ for (let i = 0; i < PULSE_COUNT; i++) {
 }
 
 // ---------- starfield ----------
+// soft round star texture — bare gl.POINTS render as hard white squares
+const starTex = (() => {
+  const c = document.createElement("canvas");
+  c.width = c.height = 32;
+  const g = c.getContext("2d");
+  const grad = g.createRadialGradient(16, 16, 0, 16, 16, 16);
+  grad.addColorStop(0, "rgba(255,255,255,1)");
+  grad.addColorStop(0.35, "rgba(255,255,255,0.5)");
+  grad.addColorStop(1, "rgba(255,255,255,0)");
+  g.fillStyle = grad;
+  g.fillRect(0, 0, 32, 32);
+  return new THREE.CanvasTexture(c);
+})();
+
+// a real sky isn't monochrome — temperature-varied whites, blue to amber
+const STAR_TINTS = [
+  [0.72, 0.80, 1.00],
+  [0.88, 0.92, 1.00],
+  [1.00, 1.00, 1.00],
+  [1.00, 0.95, 0.84],
+  [1.00, 0.87, 0.68],
+];
 function starLayer(count, size, opacity, spread) {
   const geo = new THREE.BufferGeometry();
   const pos = new Float32Array(count * 3);
+  const col = new Float32Array(count * 3);
   for (let i = 0; i < count; i++) {
     const r = spread + Math.random() * 60;
     const theta = Math.random() * Math.PI * 2;
@@ -1119,17 +1153,23 @@ function starLayer(count, size, opacity, spread) {
     pos[i*3] = r * Math.sin(phi) * Math.cos(theta);
     pos[i*3+1] = r * Math.sin(phi) * Math.sin(theta);
     pos[i*3+2] = r * Math.cos(phi);
+    const tint = STAR_TINTS[Math.floor(Math.random() * STAR_TINTS.length)];
+    const dim = 0.65 + Math.random() * 0.35; // per-star brightness variation
+    col[i*3] = tint[0] * dim; col[i*3+1] = tint[1] * dim; col[i*3+2] = tint[2] * dim;
   }
   geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+  geo.setAttribute("color", new THREE.BufferAttribute(col, 3));
   const pts = new THREE.Points(geo, new THREE.PointsMaterial({
-    color: 0xffffff, size, transparent: true, opacity, depthWrite: false,
+    map: starTex, vertexColors: true, size, transparent: true, opacity,
+    depthWrite: false, blending: THREE.AdditiveBlending,
   }));
   scene.add(pts);
   return pts;
 }
-const starsFar = starLayer(700, 0.28, 0.4, 45);
-const starsNear = starLayer(200, 0.5, 0.65, 30);
-starsNear.material.color.set(0xf0e6d0); // near stars lean ivory, tying the sky to the gold
+const starsFar = starLayer(900, 0.34, 0.55, 45);
+const starsNear = starLayer(260, 0.6, 0.75, 30);
+// a handful of standout stars, the way a real night sky has a few that lead
+const starsHero = starLayer(26, 1.5, 0.9, 34);
 
 // ---------- interaction ----------
 const raycaster = new THREE.Raycaster();
@@ -1163,7 +1203,7 @@ function spotlightArtist(sprite) {
   const curve = arcCurves.get(sprite);
   if (curve) {
     highlight.geometry.dispose();
-    highlight.geometry = new THREE.BufferGeometry().setFromPoints(curve.getPoints(48));
+    highlight.geometry = new THREE.TubeGeometry(curve, 48, THREAD_R * 1.7, 4, false);
     highlight.visible = true;
   }
 }
@@ -1557,6 +1597,7 @@ let rotateFrames = 0, rotateCalibrated = REDUCED_MOTION;
   if (!REDUCED_MOTION) {
     starsFar.rotation.y = t * 0.004;
     starsNear.rotation.y = -t * 0.007;
+    starsHero.rotation.y = t * 0.0025;
   }
 
   pulses.forEach((p, i) => {
