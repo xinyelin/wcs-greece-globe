@@ -43,20 +43,36 @@
   /* ---------- loading ---------- */
   #loading{
     position:fixed;inset:0;z-index:20;display:flex;
-    flex-direction:column;align-items:center;justify-content:center;gap:18px;
-    background:var(--void);transition:opacity .6s ease;
+    flex-direction:column;align-items:center;justify-content:center;gap:26px;
+    background:var(--void);transition:opacity .8s ease;
   }
   #loading.done{opacity:0;pointer-events:none;}
-  #loading .mark{
-    font-family:'Fraunces',Georgia,serif;font-style:italic;font-weight:300;
-    font-size:26px;color:var(--gold);
+  #loading .loading-mark{
+    width:168px;height:auto;display:block;opacity:0;
+    filter:drop-shadow(0 0 28px rgba(212,180,131,0.14));
+    animation:markIn 1.5s cubic-bezier(.22,.8,.3,1) .1s both;
   }
-  #loading .bar{width:150px;height:1px;background:rgba(212,180,131,0.18);overflow:hidden;}
-  #loading .bar i{
-    display:block;height:100%;width:40%;background:var(--gold);
-    animation:sweep 1.3s ease-in-out infinite;
+  @keyframes markIn{
+    from{opacity:0;transform:scale(.95) translateY(8px);}
+    to{opacity:1;transform:scale(1) translateY(0);}
   }
-  @keyframes sweep{0%{transform:translateX(-100%);}100%{transform:translateX(350%);}}
+  #loading .loading-bar{
+    width:170px;height:1px;background:rgba(212,180,131,0.18);
+    overflow:hidden;position:relative;
+    animation:rise 1s .6s ease both;
+  }
+  #loading .loading-bar i{
+    display:block;height:100%;width:0%;background:var(--gold);
+    box-shadow:0 0 9px rgba(212,180,131,0.65);
+    transition:width .3s ease;
+  }
+  #loading .loading-bar.indeterminate i{width:36%;animation:sweep 1.35s ease-in-out infinite;}
+  @keyframes sweep{0%{transform:translateX(-260%);}100%{transform:translateX(370%);}}
+  #loading .loading-label{
+    font-size:10px;letter-spacing:0.32em;text-transform:uppercase;color:var(--mist);
+    opacity:0;animation:rise 1s .75s ease both;min-height:12px;
+  }
+  #loading .loading-label b{color:var(--gold);font-weight:400;}
 
   /* ---------- museum wall label ---------- */
   .label-block{
@@ -227,8 +243,17 @@
     font-size:11px;letter-spacing:0.24em;text-transform:uppercase;color:var(--mist);
     opacity:0.8;animation:riseCentered 1.2s .5s ease both;white-space:nowrap;
   }
+  .mission-block{
+    position:absolute;bottom:40px;right:52px;z-index:5;max-width:250px;
+    display:flex;flex-direction:column;align-items:flex-end;gap:16px;
+  }
+  .mission-mark{
+    width:52px;height:auto;display:block;opacity:0.6;
+    animation:rise 1.2s .42s ease both;transition:opacity .3s ease;
+  }
+  .mission-mark:hover,.mission-mark:focus-visible{opacity:0.95;}
   .mission{
-    position:absolute;bottom:40px;right:52px;z-index:5;max-width:250px;text-align:right;
+    max-width:250px;text-align:right;
     font-family:'Fraunces',Georgia,serif;font-style:italic;font-weight:300;
     font-size:14px;line-height:1.7;color:var(--mist);
     animation:rise 1.2s .5s ease both;
@@ -366,7 +391,7 @@
   body.fallback-mode .label-block,
   body.fallback-mode .meta-block,
   body.fallback-mode .hint,
-  body.fallback-mode .mission,
+  body.fallback-mode .mission-block,
   body.fallback-mode #globe-canvas{display:none;}
   #fallback .fb-head{max-width:760px;margin-bottom:10px;}
   #fallback .fb-note{
@@ -400,7 +425,7 @@
     to{opacity:0.8;transform:translateX(-50%) translateY(0);}
   }
   /* the centered hint owns the bottom edge; decorative neighbours yield when space runs out */
-  @media (max-width:1200px){ .mission{display:none;} }
+  @media (max-width:1200px){ .mission-block{display:none;} }
   /* too narrow for the hint to clear the stats sideways, so lift it clear instead */
   @media (min-width:901px) and (max-width:1250px){ .hint{bottom:104px;} }
   @media (prefers-reduced-motion: reduce){
@@ -412,7 +437,7 @@
     .label-block{left:24px;top:24px;max-width:300px;}
     h1{font-size:48px;}
     .meta-block{left:24px;bottom:24px;}
-    .mission,.hint{display:none;}
+    .hint{display:none;}
     #artist-panel{width:100%;}
     #fallback{padding:36px 24px 60px;}
     #fallback h1{font-size:38px;}
@@ -448,8 +473,9 @@
 </head>
 <body>
 <div id="loading">
-  <div class="mark">World Culture Salon</div>
-  <div class="bar"><i></i></div>
+  <img class="loading-mark" src="logo.png" width="336" height="346" alt="One Culture Foundation — World Culture Salon">
+  <div class="loading-bar indeterminate" id="loading-bar"><i id="loading-fill"></i></div>
+  <div class="loading-label" id="loading-label">Gathering the light</div>
 </div>
 
 <div id="app">
@@ -541,7 +567,12 @@
   </nav>
 
   <div class="hint">Drag to orbit · Scroll to zoom · Select a light to meet its artist</div>
-  <div class="mission">Ideas worth feeling.<br>Culture worth remembering.</div>
+  <div class="mission-block">
+    <a href="https://www.oneculturefdn.org/" target="_blank" rel="noopener" aria-label="One Culture Foundation">
+      <img class="mission-mark" src="logo.png" alt="One Culture Foundation">
+    </a>
+    <div class="mission">Ideas worth feeling.<br>Culture worth remembering.</div>
+  </div>
 
   <aside id="artist-panel" aria-label="Artist detail">
     <button class="panel-close" id="panel-close" aria-label="Close">✕</button>
@@ -688,6 +719,18 @@ function esc(s) {
   return String(s || "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 }
 
+// drives the loading screen's bar from real bytes-loaded progress once
+// it's measurable; stays in its gentle indeterminate sweep until then
+function setLoadingProgress(pct) {
+  const bar = document.getElementById("loading-bar");
+  const fill = document.getElementById("loading-fill");
+  const label = document.getElementById("loading-label");
+  if (!bar || !fill || !label) return;
+  bar.classList.remove("indeterminate");
+  fill.style.width = Math.max(0, Math.min(100, pct)) + "%";
+  label.innerHTML = `Gathering the light <b>${Math.round(pct)}%</b>`;
+}
+
 // ---------- fallback gallery (no WebGL) ----------
 function showFallback() {
   const grid = document.getElementById("fb-grid");
@@ -711,6 +754,7 @@ function showFallback() {
     btn.addEventListener("click", () => submitVote(btn, idx));
   });
   document.body.classList.add("fallback-mode");
+  setLoadingProgress(100);
   document.getElementById("loading").classList.add("done");
 }
 
@@ -893,7 +937,10 @@ if (USE_TEXTURE) {
     mat.map = tex;
     mat.color.set(0xffffff);
     mat.needsUpdate = true;
-  }, undefined, () => {});
+    setLoadingProgress(100);
+  }, (evt) => {
+    if (evt.lengthComputable) setLoadingProgress((evt.loaded / evt.total) * 100);
+  }, () => {});
   globe.add(new THREE.Mesh(new THREE.SphereGeometry(RADIUS, 96, 96), mat));
 } else {
   // opaque shell so land points on the far side stay hidden
@@ -1499,6 +1546,7 @@ let shown = false;
 
   if (!shown) {
     shown = true;
+    setLoadingProgress(100);
     document.getElementById("loading").classList.add("done");
   }
 })();
