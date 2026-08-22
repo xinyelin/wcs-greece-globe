@@ -108,6 +108,8 @@
     .eyebrow{position:fixed;top:44px;right:52px;text-align:right;z-index:5;}
     .chapter{margin-top:0;}
     .sig-mark{display:block;margin-top:14px;}
+    /* the mark speaks through opacity alone — no underline like the text links */
+    .eyebrow a.sig-mark,.eyebrow a.sig-mark:hover,.eyebrow a.sig-mark:focus-visible{border-bottom:none;}
     .sig-mark img{width:74px;height:auto;display:block;margin-left:auto;opacity:0.55;transition:opacity .3s;}
     .sig-mark:hover img,.sig-mark:focus-visible img{opacity:0.95;}
   }
@@ -300,15 +302,14 @@
   /* the one solid-gold element on screen: the olive-branch offering.
      everything else gold is outline or type, so the eye lands here first */
   .donate-btn{
-    display:flex;align-items:center;justify-content:center;gap:10px;
+    display:flex;align-items:center;justify-content:center;
     background:var(--gold);color:#171008;text-decoration:none;
     font-family:inherit;font-size:10.5px;letter-spacing:0.28em;text-transform:uppercase;
     font-weight:500;padding:13px 22px;white-space:nowrap;
-    transition:background .25s;
+    transition:background .25s,color .25s;
     animation:rise 1.2s .52s ease both;
   }
-  .donate-btn:hover,.donate-btn:focus-visible{background:#e3c795;}
-  .donate-btn svg{width:17px;height:17px;flex:none;}
+  .donate-btn:hover,.donate-btn:focus-visible{background:#f6e7c1;color:#0d0a04;}
 
   /* ---------- follow-the-chapter overlay ---------- */
   #follow-form{display:flex;gap:14px;align-items:flex-end;margin-top:34px;}
@@ -569,8 +570,7 @@
     /* the block sits one storey above the stats line, spanning the full width
        so the buttons pin cleanly to the right edge without clipping */
     .mission-block{left:16px;right:16px;bottom:58px;max-width:none;gap:8px;}
-    .donate-btn{font-size:9px;letter-spacing:0.2em;padding:11px 14px;gap:8px;}
-    .donate-btn svg{width:14px;height:14px;}
+    .donate-btn{font-size:9px;letter-spacing:0.2em;padding:11px 14px;}
     .follow-btn{font-size:9px;letter-spacing:0.22em;padding:9px 14px;}
     .follow-btn .fl-long{display:none;}
     .follow-btn .fl-short{display:inline;}
@@ -718,10 +718,7 @@
   <div class="hint">Drag to orbit · Scroll to zoom · Select a light to meet its artist</div>
   <div class="mission-block">
     <div class="mission">Ideas worth feeling.<br>Culture worth remembering.</div>
-    <a class="donate-btn" href="https://www.oneculturefdn.org/donation" target="_blank" rel="noopener" aria-label="Support the mission — donate to One Culture Foundation">
-      <svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><path d="M10 34Q24 20 38 10" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><ellipse cx="16" cy="29" rx="4.4" ry="2" transform="rotate(-30 16 29)" stroke="currentColor" stroke-width="1.8"/><ellipse cx="24" cy="21.5" rx="4.4" ry="2" transform="rotate(-35 24 21.5)" stroke="currentColor" stroke-width="1.8"/><ellipse cx="32" cy="14.5" rx="4.4" ry="2" transform="rotate(-40 32 14.5)" stroke="currentColor" stroke-width="1.8"/></svg>
-      <span>Support the Mission</span>
-    </a>
+    <a class="donate-btn" href="https://www.oneculturefdn.org/donation" target="_blank" rel="noopener" aria-label="Support the mission — donate to One Culture Foundation">Support the Mission</a>
     <button class="follow-btn" id="follow-btn"><span class="fl-long">Follow the Chapter</span><span class="fl-short">Subscribe</span></button>
   </div>
 
@@ -893,6 +890,15 @@ function esc(s) {
   return String(s || "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 }
 
+// the loading screen is the brand's opening ritual: even when everything is
+// cached and ready in milliseconds, hold it long enough to actually be seen
+const LOADING_SHOWN_AT = performance.now();
+const LOADING_MIN_MS = 3000;
+function finishLoading() {
+  const wait = Math.max(0, LOADING_MIN_MS - (performance.now() - LOADING_SHOWN_AT));
+  setTimeout(() => document.getElementById("loading").classList.add("done"), wait);
+}
+
 // drives the loading screen's bar from real bytes-loaded progress once
 // it's measurable; stays in its gentle indeterminate sweep until then
 function setLoadingProgress(pct) {
@@ -929,7 +935,7 @@ function showFallback() {
   });
   document.body.classList.add("fallback-mode");
   setLoadingProgress(100);
-  document.getElementById("loading").classList.add("done");
+  finishLoading();
 }
 
 function webglAvailable() {
@@ -1870,7 +1876,7 @@ let rotateFrames = 0, rotateCalibrated = REDUCED_MOTION;
   if (!shown) {
     shown = true;
     setLoadingProgress(100);
-    document.getElementById("loading").classList.add("done");
+    finishLoading();
   }
 })();
 }
