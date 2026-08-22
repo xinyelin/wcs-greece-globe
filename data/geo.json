@@ -562,5 +562,47 @@
     -40.0,
     "Nomadic",
     "Nomadic"
+  ],
+  "ramat gan, israel": [
+    32.068,
+    34.824,
+    "Ramat Gan, Israel",
+    "Asia"
+  ],
+  "nashville, usa": [
+    36.162,
+    -86.781,
+    "Nashville, USA",
+    "Americas"
+  ],
+  "san marcos, tx": [
+    29.883,
+    -97.941,
+    "San Marcos, TX, USA",
+    "Americas"
+  ],
+  "sofia, bulgaria": [
+    42.698,
+    23.319,
+    "Sofia, Bulgaria",
+    "Europe"
+  ],
+  "patras, greece": [
+    38.246,
+    21.735,
+    "Patras, Greece",
+    "Europe"
+  ],
+  "firenze, italy": [
+    43.769,
+    11.256,
+    "Florence, Italy",
+    "Europe"
+  ],
+  "cadiz, spain": [
+    36.529,
+    -6.292,
+    "Cádiz, Spain",
+    "Europe"
   ]
 }
