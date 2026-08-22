@@ -10,11 +10,25 @@ async function redis(cmd) {
 }
 
 module.exports = async (req, res) => {
-  if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });
-  if (!process.env.ADMIN_KEY || (req.query.key || "") !== process.env.ADMIN_KEY) {
+  if (req.method !== "GET" && req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
+  const key = req.method === "POST" ? (req.body && req.body.key) : req.query.key;
+  if (!process.env.ADMIN_KEY || (key || "") !== process.env.ADMIN_KEY) {
     return res.status(401).json({ error: "Unauthorized" });
   }
   if (!REST_URL || !REST_TOKEN) return res.status(503).json({ error: "Storage not configured" });
+
+  // POST + action=reset wipes all vote counts — only reachable with the admin key,
+  // and never triggerable by a plain link/GET
+  if (req.method === "POST" && req.body && req.body.action === "reset") {
+    try {
+      await redis(["DEL", "votes"]);
+      return res.status(200).json({ ok: true, cleared: true });
+    } catch (e) {
+      return res.status(500).json({ error: "Storage error" });
+    }
+  }
 
   try {
     const flat = (await redis(["HGETALL", "votes"])) || [];
