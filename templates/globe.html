@@ -1304,9 +1304,23 @@ markers.forEach((m) => {
   const from = m.position.clone(), to = ATHENS.clone();
   const dist = from.distanceTo(to);
   if (dist < 0.05) return;
-  const mid = from.clone().add(to).multiplyScalar(0.5).normalize()
-    .multiplyScalar(RADIUS * (1.02 + dist * 0.12));
-  const curve = new THREE.QuadraticBezierCurve3(from, mid, to);
+  // a single-control bezier sags below the surface on long arcs (the
+  // southern-Africa threads used to pierce the globe), so instead sample
+  // the great circle and lift every point — none can ever be inside
+  const angle = from.angleTo(to);
+  // long arcs are capped so far-side threads hug the silhouette instead of
+  // lassoing into space; the per-artist stagger keeps capped arcs from
+  // stacking into identical rims at the limb
+  const lift = Math.min(0.03 + angle * 0.06, 0.055 + (m.userData.index % 7) * 0.005);
+  const pts = [];
+  for (let i = 0; i <= 40; i++) {
+    const t = i / 40;
+    const p = from.clone().lerp(to, t);
+    if (p.lengthSq() < 0.001) p.set(0, 1, 0); // antipodal guard
+    p.normalize().multiplyScalar(RADIUS * (1.015 + Math.sin(Math.PI * t) * lift));
+    pts.push(p);
+  }
+  const curve = new THREE.CatmullRomCurve3(pts);
   arcCurves.set(m, curve);
   const tg = new THREE.TubeGeometry(curve, 40, THREAD_R, 3, false);
   const p = tg.attributes.position.array;
