@@ -248,7 +248,7 @@
     display:flex;flex-direction:column;align-items:flex-end;gap:16px;
   }
   .mission-mark{
-    width:52px;height:auto;display:block;opacity:0.6;
+    width:68px;height:auto;display:block;opacity:0.6;
     animation:rise 1.2s .42s ease both;transition:opacity .3s ease;
   }
   .mission-mark:hover,.mission-mark:focus-visible{opacity:0.95;}
@@ -425,7 +425,8 @@
     to{opacity:0.8;transform:translateX(-50%) translateY(0);}
   }
   /* the centered hint owns the bottom edge; decorative neighbours yield when space runs out */
-  @media (max-width:1200px){ .mission-block{display:none;} }
+  /* narrow screens keep the mark but drop the tagline text */
+  @media (max-width:1200px){ .mission{display:none;} }
   /* too narrow for the hint to clear the stats sideways, so lift it clear instead */
   @media (min-width:901px) and (max-width:1250px){ .hint{bottom:104px;} }
   @media (prefers-reduced-motion: reduce){
@@ -437,6 +438,8 @@
     .label-block{left:24px;top:24px;max-width:300px;}
     h1{font-size:48px;}
     .meta-block{left:24px;bottom:24px;}
+    .mission-block{right:24px;bottom:24px;}
+    .mission-mark{width:52px;}
     .hint{display:none;}
     #artist-panel{width:100%;}
     #fallback{padding:36px 24px 60px;}
@@ -457,6 +460,8 @@
     .dek{display:none;}
     .diplomacy{margin-top:10px;padding-top:8px;font-size:8.5px;letter-spacing:0.18em;line-height:1.9;}
     .meta-block{left:16px;bottom:20px;}
+    .mission-block{right:16px;bottom:20px;}
+    .mission-mark{width:46px;}
     .stats{gap:18px;}
     .stat b{font-size:22px;}
     .stat span{font-size:8px;letter-spacing:0.2em;margin-top:3px;}
