@@ -65,12 +65,23 @@
     display:block;height:100%;width:0%;background:var(--gold);
     box-shadow:0 0 9px rgba(212,180,131,0.65);
   }
-  /* the star of light riding the tip of the progress */
+  /* the shooting star riding the tip of the progress — the same soft
+     glow as the artist lights on the globe, trailing a comet tail that
+     lengthens as it travels */
   #loading .loading-star{
-    position:absolute;top:50%;left:0;
+    position:absolute;top:50%;left:0;width:7px;height:7px;border-radius:50%;
     transform:translate(-50%,-50%);
-    font-size:12px;line-height:1;color:#efd9ab;
-    text-shadow:0 0 8px rgba(212,180,131,0.95),0 0 20px rgba(212,180,131,0.55);
+    background:#fff;
+    box-shadow:
+      0 0 6px 2px rgba(255,255,255,0.9),
+      0 0 14px 6px rgba(212,190,150,0.5),
+      0 0 30px 14px rgba(170,195,235,0.22);
+  }
+  #loading .loading-star::before{
+    content:"";position:absolute;right:4px;top:50%;
+    width:var(--tail,0px);height:2px;transform:translateY(-50%);
+    background:linear-gradient(to left, rgba(255,255,255,0.8), rgba(212,180,131,0.3) 45%, transparent);
+    border-radius:2px;
   }
   #loading .loading-label{
     font-size:10px;letter-spacing:0.32em;text-transform:uppercase;color:var(--mist);
@@ -602,7 +613,7 @@
   <img class="loading-mark" src="logo.png" width="336" height="346" alt="One Culture Foundation — World Culture Salon">
   <div class="loading-track">
     <div class="loading-bar" id="loading-bar"><i id="loading-fill"></i></div>
-    <span class="loading-star" id="loading-star" aria-hidden="true">✦</span>
+    <span class="loading-star" id="loading-star" aria-hidden="true"></span>
   </div>
   <div class="loading-label" id="loading-label">Gathering the light</div>
 </div>
@@ -919,7 +930,10 @@ function setLoadingProgress(pct) {
   if (!fill || !label) return;
   const p = Math.max(0, Math.min(100, pct));
   fill.style.width = p + "%";
-  if (star) star.style.left = p + "%";
+  if (star) {
+    star.style.left = p + "%";
+    star.style.setProperty("--tail", Math.min(44, p * 1.7) + "px");
+  }
   label.innerHTML = `Gathering the light <b>${Math.round(p)}%</b>`;
 }
 
