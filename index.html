@@ -866,7 +866,8 @@ const controls = new THREE.OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.08;
 controls.autoRotate = !REDUCED_MOTION;
-controls.autoRotateSpeed = 0.22;
+const BASE_ROTATE_SPEED = 0.22; // three.js calibrates this for exactly 60fps
+controls.autoRotateSpeed = BASE_ROTATE_SPEED;
 controls.minDistance = 3.2;
 controls.maxDistance = Math.max(9, cameraDistanceForAspect() + 1.5);
 controls.enablePan = false;
@@ -1478,6 +1479,11 @@ document.getElementById("search-btn").addEventListener("click", openSearch);
 document.getElementById("search-close").addEventListener("click", closeSearch);
 searchOverlay.addEventListener("click", (e) => { if (e.target === searchOverlay) closeSearch(); });
 searchInput.addEventListener("input", () => renderSearch(searchInput.value));
+// scoped here (not the shared-scope keydown listener above) because search
+// only exists once the globe has actually initialized
+window.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !searchOverlay.hidden) closeSearch();
+});
 
 // test hook: exposes internals only when ?debug is present
 if (new URLSearchParams(location.search).has("debug")) {
@@ -1498,9 +1504,29 @@ window.addEventListener("resize", () => {
 const sunDirView = new THREE.Vector3();
 const t0 = performance.now();
 let shown = false;
+
+// OrbitControls' autoRotate advances a fixed angle per update() call,
+// calibrated for exactly 60fps — it has no delta-time compensation, so on
+// a device that actually renders slower (common on mobile: this scene's
+// fresnel atmosphere shader, glow sprites and full-res texture are not
+// cheap), the globe visibly turns slower in real time even though the
+// speed number is identical. Measure the real frame rate for the first
+// second and scale the speed to compensate, once.
+let rotateFrames = 0, rotateCalibrated = REDUCED_MOTION;
+
 (function animate() {
   requestAnimationFrame(animate);
   const t = (performance.now() - t0) / 1000;
+
+  if (!rotateCalibrated) {
+    rotateFrames++;
+    if (t >= 1) {
+      const measuredFps = rotateFrames / t;
+      const factor = Math.max(0.6, Math.min(2.5, 60 / measuredFps));
+      controls.autoRotateSpeed = BASE_ROTATE_SPEED * factor;
+      rotateCalibrated = true;
+    }
+  }
 
   beacon.scale.setScalar(0.22 + Math.sin(t * 2.2) * 0.045);
   if (!REDUCED_MOTION) {
