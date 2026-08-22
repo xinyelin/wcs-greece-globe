@@ -285,6 +285,57 @@
     font-size:14px;line-height:1.7;color:var(--mist);
     animation:rise 1.2s .5s ease both;
   }
+  .follow-btn{
+    background:rgba(9,16,26,0.45);border:1px solid var(--gold-dim);color:var(--gold);
+    font-family:inherit;font-size:10.5px;letter-spacing:0.28em;text-transform:uppercase;
+    padding:12px 20px;cursor:pointer;backdrop-filter:blur(4px);
+    transition:border-color .25s,background .25s;
+    animation:rise 1.2s .58s ease both;
+  }
+  .follow-btn:hover,.follow-btn:focus-visible{
+    border-color:var(--gold);background:rgba(212,180,131,0.12);
+  }
+  .follow-btn .fl-short{display:none;}
+
+  /* ---------- follow-the-chapter overlay ---------- */
+  #follow-form{display:flex;gap:14px;align-items:flex-end;margin-top:34px;}
+  #follow-email{
+    flex:1;background:none;border:none;outline:none;
+    border-bottom:1px solid var(--gold-dim);
+    font-family:'Fraunces',Georgia,serif;font-weight:300;font-size:22px;
+    color:var(--marble);padding:8px 2px 12px;min-width:0;
+    transition:border-color .25s;
+  }
+  #follow-email:focus{border-color:var(--gold);}
+  #follow-email::placeholder{font-style:italic;color:var(--mist);opacity:0.55;}
+  #follow-submit{
+    background:none;border:1px solid var(--gold-dim);color:var(--gold);
+    font-family:inherit;font-size:10.5px;letter-spacing:0.26em;text-transform:uppercase;
+    padding:13px 22px;cursor:pointer;flex:none;
+    transition:border-color .25s,background .25s;
+  }
+  #follow-submit:hover,#follow-submit:focus-visible{
+    border-color:var(--gold);background:rgba(212,180,131,0.12);
+  }
+  #follow-submit:disabled{opacity:0.5;cursor:default;}
+  .follow-note{
+    margin-top:18px;font-size:12.5px;letter-spacing:0.06em;color:var(--mist);min-height:16px;
+  }
+  .follow-note.ok{
+    font-family:'Fraunces',Georgia,serif;font-style:italic;font-size:19px;
+    color:var(--marble);letter-spacing:0.01em;line-height:1.6;
+  }
+  /* the quiet invitation that appears under a just-cast vote */
+  .follow-nudge{
+    background:none;border:none;cursor:pointer;font-family:inherit;
+    padding:0;margin-top:2px;text-align:left;
+    font-size:11px;letter-spacing:0.05em;color:var(--mist);
+  }
+  .follow-nudge i{
+    font-family:'Fraunces',Georgia,serif;font-style:italic;
+    font-size:13.5px;color:var(--gold);transition:color .25s;
+  }
+  .follow-nudge:hover i,.follow-nudge:focus-visible i{color:#e3c795;}
 
   /* ---------- artist panel ---------- */
   #artist-panel{
@@ -495,8 +546,14 @@
     .social-row{margin-top:10px;gap:16px;}
     .social-row svg{width:15px;height:15px;}
     .meta-block{left:16px;bottom:20px;}
-    .mission-block{right:16px;bottom:20px;}
+    .mission-block{right:16px;bottom:20px;gap:10px;}
     .mission-mark{width:46px;}
+    .follow-btn{font-size:9px;letter-spacing:0.22em;padding:9px 14px;}
+    .follow-btn .fl-long{display:none;}
+    .follow-btn .fl-short{display:inline;}
+    #follow-form{gap:10px;margin-top:26px;flex-direction:column;align-items:stretch;}
+    #follow-email{font-size:18px;}
+    #follow-submit{padding:12px 18px;}
     .stats{gap:18px;}
     .stat b{font-size:22px;}
     .stat span{font-size:8px;letter-spacing:0.2em;margin-top:3px;}
@@ -568,6 +625,20 @@
     </div>
   </div>
 
+  <div id="follow-overlay" class="overlay" hidden>
+    <button class="overlay-close" id="follow-close" aria-label="Close">✕</button>
+    <div class="overlay-box">
+      <div class="overlay-eyebrow">World Culture Salon</div>
+      <div class="overlay-title">Follow the Chapter</div>
+      <div class="overlay-sub">Chapter I is still unfolding — artists keep arriving, the vote is open, and the story ends in an exhibition. Leave your email and we'll write when something true happens. No noise, ever.</div>
+      <form id="follow-form" novalidate>
+        <input id="follow-email" type="email" placeholder="Your email" autocomplete="email" spellcheck="false">
+        <button type="submit" id="follow-submit">Subscribe</button>
+      </form>
+      <div class="follow-note" id="follow-note"></div>
+    </div>
+  </div>
+
   <div class="meta-block">
     <div class="stats">
       <button class="stat" id="stat-artists-btn" aria-label="See every artist"><b id="stat-artists">—</b><span>Artists</span></button>
@@ -623,6 +694,7 @@
       <img class="mission-mark" src="logo.png" alt="One Culture Foundation">
     </a>
     <div class="mission">Ideas worth feeling.<br>Culture worth remembering.</div>
+    <button class="follow-btn" id="follow-btn"><span class="fl-long">Follow the Chapter</span><span class="fl-short">Subscribe</span></button>
   </div>
 
   <aside id="artist-panel" aria-label="Artist detail">
@@ -754,6 +826,16 @@ async function submitVote(btn, index) {
     if (undoing) votedSet.delete(index); else votedSet.add(index);
     localStorage.setItem("wcs_votes", JSON.stringify([...votedSet]));
     paintVoteBtn(btn, index);
+    // the moment someone casts a vote is the one natural moment to ask —
+    // they just told us they care how this chapter ends
+    if (!undoing && !localStorage.getItem("wcs_sub") && !btn.parentElement.querySelector(".follow-nudge")) {
+      const n = document.createElement("button");
+      n.type = "button";
+      n.className = "follow-nudge";
+      n.innerHTML = 'Counted. <i>Follow the chapter to see where it leads →</i>';
+      n.addEventListener("click", openFollow);
+      btn.insertAdjacentElement("afterend", n);
+    }
   } catch (e) {
     btn.textContent = "Voting opens soon";
     setTimeout(() => paintVoteBtn(btn, index), 2500);
@@ -883,8 +965,60 @@ document.querySelectorAll(".rail-item").forEach(btn => {
   btn.addEventListener("click", () => openCultureOverlay(btn.dataset.key));
 });
 window.addEventListener("keydown", (e) => {
-  if (e.key === "Escape" && !cultureOverlay.hidden) closeCultureOverlay();
+  if (e.key !== "Escape") return;
+  if (!cultureOverlay.hidden) closeCultureOverlay();
+  if (!followOverlay.hidden) closeFollow();
 });
+
+// ---------- follow the chapter: the newsletter, in the page's own voice ----------
+const followOverlay = document.getElementById("follow-overlay");
+const followForm = document.getElementById("follow-form");
+const followEmail = document.getElementById("follow-email");
+const followSubmit = document.getElementById("follow-submit");
+const followNote = document.getElementById("follow-note");
+
+function openFollow() {
+  followOverlay.hidden = false;
+  requestAnimationFrame(() => followOverlay.classList.add("open"));
+  if (!followForm.hidden) setTimeout(() => followEmail.focus(), 350);
+}
+function closeFollow() {
+  followOverlay.classList.remove("open");
+  setTimeout(() => { followOverlay.hidden = true; }, 300);
+}
+function followMsg(text, ok) {
+  followNote.textContent = text;
+  followNote.classList.toggle("ok", !!ok);
+}
+followForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const email = followEmail.value.trim();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+    followMsg("That address doesn't look complete — mind checking it?");
+    return;
+  }
+  followSubmit.disabled = true;
+  followSubmit.textContent = "Joining…";
+  try {
+    const r = await fetch(API_BASE + "/api/subscribe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+    if (!r.ok) throw new Error("subscribe failed");
+    localStorage.setItem("wcs_sub", "1");
+    document.querySelectorAll(".follow-nudge").forEach(n => n.remove());
+    followForm.hidden = true;
+    followMsg("Welcome to the salon. One letter, only when it matters.", true);
+  } catch (err) {
+    followSubmit.disabled = false;
+    followSubmit.textContent = "Subscribe";
+    followMsg("Something slipped — please try again in a moment.");
+  }
+});
+document.getElementById("follow-btn").addEventListener("click", openFollow);
+document.getElementById("follow-close").addEventListener("click", closeFollow);
+followOverlay.addEventListener("click", (e) => { if (e.target === followOverlay) closeFollow(); });
 
 if (typeof THREE === "undefined" || !webglAvailable()) {
   showFallback();
