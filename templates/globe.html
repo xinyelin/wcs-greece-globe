@@ -100,10 +100,16 @@
     color:var(--mist);font-weight:400;margin-top:4px;
   }
   /* on desktop the org signature moves to the top-right corner, so the
-     chapter title owns the top-left; narrow screens keep it above the title */
+     chapter title owns the top-left; narrow screens keep it above the title.
+     the mark sits under the signature text, completing the lockup — it only
+     exists on desktop, where the corner has room for it */
+  .sig-mark{display:none;}
   @media (min-width:901px){
     .eyebrow{position:fixed;top:44px;right:52px;text-align:right;z-index:5;}
     .chapter{margin-top:0;}
+    .sig-mark{display:block;margin-top:14px;}
+    .sig-mark img{width:74px;height:auto;display:block;margin-left:auto;opacity:0.55;transition:opacity .3s;}
+    .sig-mark:hover img,.sig-mark:focus-visible img{opacity:0.95;}
   }
   .chapter{
     font-family:'Fraunces',Georgia,serif;font-style:italic;font-weight:300;
@@ -168,7 +174,7 @@
      scroll clipping) because the flyout labels below need to escape the
      rail's own box to the left without being cut off. */
   .culture-rail{
-    position:absolute;right:52px;top:130px;bottom:130px;z-index:5;
+    position:absolute;right:52px;top:190px;bottom:130px;z-index:5;
     display:flex;flex-direction:column;align-items:center;justify-content:center;
     gap:10px;padding:6px 2px;
     animation:rise 1.2s .4s ease both;
@@ -274,11 +280,6 @@
     position:absolute;bottom:40px;right:52px;z-index:5;max-width:250px;
     display:flex;flex-direction:column;align-items:flex-end;gap:16px;
   }
-  .mission-mark{
-    width:68px;height:auto;display:block;opacity:0.6;
-    animation:rise 1.2s .42s ease both;transition:opacity .3s ease;
-  }
-  .mission-mark:hover,.mission-mark:focus-visible{opacity:0.95;}
   .mission{
     max-width:250px;text-align:right;
     font-family:'Fraunces',Georgia,serif;font-style:italic;font-weight:300;
@@ -296,6 +297,18 @@
     border-color:var(--gold);background:rgba(212,180,131,0.12);
   }
   .follow-btn .fl-short{display:none;}
+  /* the one solid-gold element on screen: the olive-branch offering.
+     everything else gold is outline or type, so the eye lands here first */
+  .donate-btn{
+    display:flex;align-items:center;justify-content:center;gap:10px;
+    background:var(--gold);color:#171008;text-decoration:none;
+    font-family:inherit;font-size:10.5px;letter-spacing:0.28em;text-transform:uppercase;
+    font-weight:500;padding:13px 22px;white-space:nowrap;
+    transition:background .25s;
+    animation:rise 1.2s .52s ease both;
+  }
+  .donate-btn:hover,.donate-btn:focus-visible{background:#e3c795;}
+  .donate-btn svg{width:17px;height:17px;flex:none;}
 
   /* ---------- follow-the-chapter overlay ---------- */
   #follow-form{display:flex;gap:14px;align-items:flex-end;margin-top:34px;}
@@ -326,16 +339,17 @@
     color:var(--marble);letter-spacing:0.01em;line-height:1.6;
   }
   /* the quiet invitation that appears under a just-cast vote */
-  .follow-nudge{
+  .follow-nudge,.donate-nudge{
     background:none;border:none;cursor:pointer;font-family:inherit;
-    padding:0;margin-top:2px;text-align:left;
-    font-size:11px;letter-spacing:0.05em;color:var(--mist);
+    padding:0;margin-top:2px;text-align:left;display:block;
+    font-size:11px;letter-spacing:0.05em;color:var(--mist);text-decoration:none;
   }
-  .follow-nudge i{
+  .follow-nudge i,.donate-nudge i{
     font-family:'Fraunces',Georgia,serif;font-style:italic;
     font-size:13.5px;color:var(--gold);transition:color .25s;
   }
-  .follow-nudge:hover i,.follow-nudge:focus-visible i{color:#e3c795;}
+  .follow-nudge:hover i,.follow-nudge:focus-visible i,
+  .donate-nudge:hover i,.donate-nudge:focus-visible i{color:#e3c795;}
 
   /* ---------- artist panel ---------- */
   #artist-panel{
@@ -510,6 +524,11 @@
   @media (max-width:1200px){ .mission{display:none;} }
   /* too narrow for the hint to clear the stats sideways, so lift it clear instead */
   @media (min-width:901px) and (max-width:1250px){ .hint{bottom:104px;} }
+  /* short desktop viewports: the right column runs out of vertical room,
+     so the mission line yields and the two actions keep the corner */
+  @media (min-width:901px) and (max-height:800px){
+    .mission{display:none;}
+  }
   @media (prefers-reduced-motion: reduce){
     *{animation:none !important;transition:none !important;}
   }
@@ -523,7 +542,6 @@
     h1{font-size:48px;}
     .meta-block{left:24px;bottom:24px;}
     .mission-block{right:24px;bottom:24px;}
-    .mission-mark{width:52px;}
     .hint{display:none;}
     #artist-panel{width:100%;}
     #fallback{padding:36px 24px 60px;}
@@ -540,23 +558,32 @@
     .eyebrow{font-size:13px;letter-spacing:0.24em;}
     .eyebrow .salon{font-size:10px;letter-spacing:0.3em;margin-top:2px;}
     .chapter{font-size:13px;margin-top:10px;}
-    h1{font-size:32px;}
+    /* the phone headline owns its space: dek and diplomacy both yield,
+       so the title can breathe at 40px over two natural lines */
+    h1{font-size:40px;line-height:1.05;}
     .dek{display:none;}
-    .diplomacy{margin-top:10px;padding-top:8px;font-size:8.5px;letter-spacing:0.18em;line-height:1.9;}
-    .social-row{margin-top:10px;gap:16px;}
+    .diplomacy{display:none;}
+    .social-row{margin-top:12px;gap:16px;}
     .social-row svg{width:15px;height:15px;}
     .meta-block{left:16px;bottom:20px;}
-    .mission-block{right:16px;bottom:20px;gap:10px;}
-    .mission-mark{width:46px;}
+    /* the block sits one storey above the stats line, spanning the full width
+       so the buttons pin cleanly to the right edge without clipping */
+    .mission-block{left:16px;right:16px;bottom:58px;max-width:none;gap:8px;}
+    .donate-btn{font-size:9px;letter-spacing:0.2em;padding:11px 14px;gap:8px;}
+    .donate-btn svg{width:14px;height:14px;}
     .follow-btn{font-size:9px;letter-spacing:0.22em;padding:9px 14px;}
     .follow-btn .fl-long{display:none;}
     .follow-btn .fl-short{display:inline;}
     #follow-form{gap:10px;margin-top:26px;flex-direction:column;align-items:stretch;}
     #follow-email{font-size:18px;}
     #follow-submit{padding:12px 18px;}
-    .stats{gap:18px;}
-    .stat b{font-size:22px;}
-    .stat span{font-size:8px;letter-spacing:0.2em;margin-top:3px;}
+    /* three tiny stacked stats collapse into one legible caps line:
+       117 Artists · 87 Cities · 37 Countries — still three tap targets */
+    .stats{gap:0;align-items:baseline;}
+    .stat{display:flex;align-items:baseline;gap:5px;}
+    .stat b{font-size:16px;}
+    .stat span{margin-top:0;font-size:9px;letter-spacing:0.14em;}
+    .stat:not(:last-child)::after{content:"·";color:var(--mist);opacity:.5;margin:0 9px;font-size:12px;}
     #artist-panel{width:100%;padding:16px 22px 40px;}
     .panel-close{
       font-size:26px;padding:10px 12px;margin-right:-12px;
@@ -579,7 +606,7 @@
   <canvas id="globe-canvas"></canvas>
 
   <div class="label-block">
-    <div class="eyebrow"><a href="https://www.oneculturefdn.org/" target="_blank" rel="noopener">One Culture Foundation</a><span class="salon">World Culture Salon</span></div>
+    <div class="eyebrow"><a href="https://www.oneculturefdn.org/" target="_blank" rel="noopener">One Culture Foundation</a><span class="salon">World Culture Salon</span><a class="sig-mark" href="https://www.oneculturefdn.org/" target="_blank" rel="noopener" aria-label="One Culture Foundation"><img src="logo.png" alt=""></a></div>
     <div class="chapter">Chapter I</div>
     <h1>Greece, <span class="accent">gathered</span></h1>
     <p class="dek">Artists from around the world, each answering the Greek spirit from where they stand. Every thread of light returns to Athens.</p>
@@ -690,10 +717,11 @@
 
   <div class="hint">Drag to orbit · Scroll to zoom · Select a light to meet its artist</div>
   <div class="mission-block">
-    <a href="https://www.oneculturefdn.org/" target="_blank" rel="noopener" aria-label="One Culture Foundation">
-      <img class="mission-mark" src="logo.png" alt="One Culture Foundation">
-    </a>
     <div class="mission">Ideas worth feeling.<br>Culture worth remembering.</div>
+    <a class="donate-btn" href="https://www.oneculturefdn.org/donation" target="_blank" rel="noopener" aria-label="Support the mission — donate to One Culture Foundation">
+      <svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><path d="M10 34Q24 20 38 10" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><ellipse cx="16" cy="29" rx="4.4" ry="2" transform="rotate(-30 16 29)" stroke="currentColor" stroke-width="1.8"/><ellipse cx="24" cy="21.5" rx="4.4" ry="2" transform="rotate(-35 24 21.5)" stroke="currentColor" stroke-width="1.8"/><ellipse cx="32" cy="14.5" rx="4.4" ry="2" transform="rotate(-40 32 14.5)" stroke="currentColor" stroke-width="1.8"/></svg>
+      <span>Support the Mission</span>
+    </a>
     <button class="follow-btn" id="follow-btn"><span class="fl-long">Follow the Chapter</span><span class="fl-short">Subscribe</span></button>
   </div>
 
@@ -835,6 +863,16 @@ async function submitVote(btn, index) {
       n.innerHTML = 'Counted. <i>Follow the chapter to see where it leads →</i>';
       n.addEventListener("click", openFollow);
       btn.insertAdjacentElement("afterend", n);
+    }
+    // second invitation at the same high-intent moment: the olive branch
+    if (!undoing && !btn.parentElement.querySelector(".donate-nudge")) {
+      const d = document.createElement("a");
+      d.className = "donate-nudge";
+      d.href = "https://www.oneculturefdn.org/donation";
+      d.target = "_blank"; d.rel = "noopener";
+      d.innerHTML = 'If this chapter moves you, <i>offer an olive branch →</i>';
+      const anchor = btn.parentElement.querySelector(".follow-nudge") || btn;
+      anchor.insertAdjacentElement("afterend", d);
     }
   } catch (e) {
     btn.textContent = "Voting opens soon";
