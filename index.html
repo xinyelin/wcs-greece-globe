@@ -225,19 +225,32 @@
   /* ---------- shared full-screen overlay (search + explore-Greece) ---------- */
   .overlay{
     position:fixed;inset:0;z-index:40;
-    background:rgba(5,7,15,0.88);backdrop-filter:blur(12px);
     display:flex;flex-direction:column;align-items:center;
     padding:14vh 24px 40px;overflow-y:auto;
     opacity:0;transition:opacity .3s ease;
   }
+  /* the veil lives on a pseudo-element: backdrop-filter on the overlay
+     itself would hijack position:fixed for the close button, which then
+     scrolls away with the list */
+  .overlay::before{
+    content:"";position:fixed;inset:0;z-index:-1;
+    background:rgba(5,7,15,0.88);backdrop-filter:blur(12px);
+  }
   .overlay.open{opacity:1;}
   .overlay[hidden]{display:none;} /* the display:flex above would otherwise defeat `hidden` */
   .overlay-close{
-    position:fixed;top:36px;right:44px;
-    background:none;border:none;color:var(--mist);font-size:24px;
-    cursor:pointer;font-family:inherit;line-height:1;padding:8px;
+    position:fixed;top:28px;right:36px;z-index:5;
+    width:44px;height:44px;border-radius:50%;
+    background:rgba(9,16,26,0.55);border:1px solid var(--hairline);
+    color:var(--marble);font-size:19px;line-height:1;
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;font-family:inherit;padding:0;
+    backdrop-filter:blur(6px);
+    transition:border-color .25s,background .25s,color .25s;
   }
-  .overlay-close:hover,.overlay-close:focus-visible{color:var(--gold);}
+  .overlay-close:hover,.overlay-close:focus-visible{
+    color:var(--gold);border-color:var(--gold);background:rgba(212,180,131,0.1);
+  }
   .overlay-box{width:min(560px,90vw);display:flex;flex-direction:column;flex:none;}
   .overlay-box.wide{width:min(640px,92vw);}
   .overlay-eyebrow{font-size:11px;letter-spacing:0.32em;text-transform:uppercase;color:var(--gold);}
@@ -381,10 +394,15 @@
   #artist-panel::-webkit-scrollbar{width:5px;}
   #artist-panel::-webkit-scrollbar-thumb{background:var(--gold-dim);border-radius:3px;}
   .panel-close{
-    align-self:flex-end;background:none;border:none;color:var(--mist);
+    align-self:flex-end;color:var(--mist);
     font-size:22px;cursor:pointer;line-height:1;flex:none;font-family:inherit;
+    position:sticky;top:0;z-index:3;
+    width:40px;height:40px;border-radius:50%;padding:0;
+    display:flex;align-items:center;justify-content:center;
+    background:rgba(9,12,22,0.8);border:1px solid transparent;
+    transition:color .25s,border-color .25s;
   }
-  .panel-close:hover,.panel-close:focus-visible{color:var(--gold);}
+  .panel-close:hover,.panel-close:focus-visible{color:var(--gold);border-color:var(--hairline);}
   .artwork{
     width:100%;min-height:170px;border-radius:2px;flex:none;
     border:1px solid var(--hairline);
@@ -566,7 +584,9 @@
   @media (max-width:700px){
     .search-btn{top:16px;right:16px;width:42px;height:42px;}
     .search-btn.culture-btn{right:66px;}
-    .overlay-close{top:18px;right:16px;}
+    /* fully opaque on phones so a tap can never fall through to the
+       buttons underneath */
+    .overlay-close{top:14px;right:14px;background:#0d1322;border-color:var(--gold-dim);}
     .overlay{padding-top:11vh;}
     .overlay-title{font-size:24px;}
     #search-input{font-size:22px;}
@@ -599,8 +619,8 @@
     .stat span{margin-top:2px;font-size:7px;letter-spacing:0.12em;}
     #artist-panel{width:100%;padding:16px 22px 40px;}
     .panel-close{
-      font-size:26px;padding:10px 12px;margin-right:-12px;
-      position:sticky;top:0;background:rgba(9,12,22,0.85);border-radius:50%;
+      font-size:22px;width:44px;height:44px;margin-right:-6px;
+      background:#0d1322;border-color:var(--gold-dim);
     }
     .panel-name{font-size:26px;}
     .artwork{min-height:130px;}
@@ -616,12 +636,19 @@
     .meta-block{left:40px;bottom:40px;}
     .mission-block{right:40px;bottom:40px;}
   }
-  /* tablet landscape / small desktop: the headline scales to the room */
+  /* tablet landscape / small desktop: the headline scales to the room,
+     and the culture rail folds into a single quiet toggle */
+  .rail-toggle{display:none;}
+  .rail-toggle svg{transition:transform .3s ease;}
+  .culture-rail.open .rail-toggle svg{transform:rotate(90deg);}
   @media (min-width:901px) and (max-width:1200px){
     h1{font-size:58px;}
     .label-block{max-width:380px;}
     .eyebrow{font-size:15px;}
     .sig-mark img{width:64px;}
+    .rail-toggle{display:flex;}
+    .culture-rail:not(.open) .rail-item:not(.rail-toggle),
+    .culture-rail:not(.open) .search-btn{display:none;}
   }
 </style>
 </head>
@@ -710,7 +737,10 @@
     </div>
   </div>
 
-  <nav class="culture-rail" aria-label="Search and explore Greek culture">
+  <nav class="culture-rail" id="culture-rail" aria-label="Search and explore Greek culture">
+    <button class="rail-item rail-toggle" id="rail-toggle" aria-label="Search and explore Greek culture" aria-expanded="false">
+      <svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><circle cx="24" cy="11" r="2.7" fill="currentColor"/><circle cx="24" cy="24" r="2.7" fill="currentColor"/><circle cx="24" cy="37" r="2.7" fill="currentColor"/></svg>
+    </button>
     <button class="search-btn" id="search-btn" aria-label="Search artists">
       <svg width="19" height="19" viewBox="0 0 20 20" fill="none" aria-hidden="true">
         <circle cx="8.5" cy="8.5" r="6" stroke="currentColor" stroke-width="1.3"/>
@@ -1054,7 +1084,7 @@ function closeCultureOverlay() {
 document.getElementById("culture-btn").addEventListener("click", () => openCultureOverlay());
 document.getElementById("culture-close").addEventListener("click", closeCultureOverlay);
 cultureOverlay.addEventListener("click", (e) => { if (e.target === cultureOverlay) closeCultureOverlay(); });
-document.querySelectorAll(".rail-item").forEach(btn => {
+document.querySelectorAll(".rail-item[data-key]").forEach(btn => {
   btn.addEventListener("click", () => openCultureOverlay(btn.dataset.key));
 });
 window.addEventListener("keydown", (e) => {
@@ -1110,6 +1140,12 @@ followForm.addEventListener("submit", async (e) => {
   }
 });
 document.getElementById("follow-btn").addEventListener("click", openFollow);
+// tablet landscape: the culture rail folds into one toggle
+document.getElementById("rail-toggle").addEventListener("click", () => {
+  const rail = document.getElementById("culture-rail");
+  const open = rail.classList.toggle("open");
+  document.getElementById("rail-toggle").setAttribute("aria-expanded", String(open));
+});
 document.getElementById("follow-close").addEventListener("click", closeFollow);
 followOverlay.addEventListener("click", (e) => { if (e.target === followOverlay) closeFollow(); });
 
