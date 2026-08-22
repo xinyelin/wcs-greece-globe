@@ -482,7 +482,7 @@
     <div class="stats">
       <div class="stat"><b id="stat-artists">—</b><span>Artists</span></div>
       <div class="stat"><b id="stat-locations">—</b><span>Cities</span></div>
-      <div class="stat"><b>I</b><span>Chapter</span></div>
+      <div class="stat"><b id="stat-countries">—</b><span>Countries</span></div>
     </div>
   </div>
 
@@ -583,6 +583,7 @@ const TEXTURE_SRC = GLOBE_MODE === "natural" ? "earth.jpg" : "earth-gilded.jpg";
 
 document.getElementById("stat-artists").textContent = ARTISTS.length;
 document.getElementById("stat-locations").textContent = new Set(ARTISTS.map(a => a.location)).size;
+document.getElementById("stat-countries").textContent = new Set(ARTISTS.map(a => a.country).filter(Boolean)).size;
 
 // ---------- Greek culture: eight ideas, each grounded in a real place ----------
 const CULTURE = [
@@ -795,7 +796,7 @@ const controls = new THREE.OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.08;
 controls.autoRotate = !REDUCED_MOTION;
-controls.autoRotateSpeed = 0.45;
+controls.autoRotateSpeed = 0.22;
 controls.minDistance = 3.2;
 controls.maxDistance = Math.max(9, cameraDistanceForAspect() + 1.5);
 controls.enablePan = false;

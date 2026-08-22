@@ -72,7 +72,7 @@ function buildArtists(rows, geo) {
       if (rawLoc) pending.push({ name: clean(r[1]), rawLocation: rawLoc });
       return;
     }
-    const [lat, lng, display, continent] = hit;
+    const [lat, lng, display, continent, country] = hit;
     const jlat = (((i * 37) % 11) - 5) * 0.35;
     const jlng = (((i * 53) % 11) - 5) * 0.35;
     artists.push({
@@ -80,6 +80,7 @@ function buildArtists(rows, geo) {
       name: clean(r[1]),
       location: display,
       continent,
+      country,
       lat: Math.round((lat + jlat) * 1000) / 1000,
       lng: Math.round((lng + jlng) * 1000) / 1000,
       website: clean(r[4]),
