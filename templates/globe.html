@@ -482,8 +482,11 @@
     font-family:'Fraunces',Georgia,serif;font-weight:300;font-size:32px;line-height:1.1;color:var(--marble);
   }
   .panel-country{font-size:12.5px;letter-spacing:0.08em;color:var(--mist);}
+  /* the link row spans the same width as the artwork frame above it:
+     each link stretches equally so the outer borders line up */
   .panel-links{display:flex;flex-wrap:wrap;gap:9px;margin-top:4px;}
   .panel-links a{
+    flex:1;text-align:center;white-space:nowrap;
     font-size:10px;letter-spacing:0.22em;text-transform:uppercase;text-decoration:none;
     color:var(--gold);border:1px solid var(--gold-dim);
     padding:8px 14px;transition:background .2s,color .2s;font-weight:400;
