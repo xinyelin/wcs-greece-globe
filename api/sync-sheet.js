@@ -149,7 +149,7 @@ function rt(text) {
 }
 
 // best-effort: a Notion outage should never fail the sync itself
-async function logToNotion({ artistCount, pending, committed }) {
+async function logToNotion({ artistCount, pending, committed, subscriberCount }) {
   if (!NOTION_TOKEN || !NOTION_LOG_PAGE_ID) return false;
   const today = new Date().toISOString().slice(0, 10);
   const children = [
@@ -167,6 +167,7 @@ async function logToNotion({ artistCount, pending, committed }) {
       },
     },
     { object: "block", type: "bulleted_list_item", bulleted_list_item: { rich_text: rt(`是否有新提交：${committed ? "是" : "否"}`) } },
+    { object: "block", type: "bulleted_list_item", bulleted_list_item: { rich_text: rt(`邮件订阅人数：${subscriberCount == null ? "未知" : subscriberCount}`) } },
     { object: "block", type: "divider", divider: {} },
   ];
   const r = await fetch(`https://api.notion.com/v1/blocks/${NOTION_LOG_PAGE_ID}/children`, {
@@ -222,7 +223,8 @@ module.exports = async (req, res) => {
     await redis(["SET", "sync:pending", JSON.stringify(pending)]);
 
     const committed = changed.some(Boolean);
-    const notionLogged = await logToNotion({ artistCount: artists.length, pending, committed }).catch(() => false);
+    const subscriberCount = await redis(["SCARD", "subs"]).catch(() => null);
+    const notionLogged = await logToNotion({ artistCount: artists.length, pending, committed, subscriberCount }).catch(() => false);
 
     return res.status(200).json({
       ok: true,

@@ -60,7 +60,7 @@ async function load() {
     ]);
     if (rRes.status === 401) { out.innerHTML = '<div class="err">Wrong key.</div>'; return; }
     if (!rRes.ok) { out.innerHTML = '<div class="err">Storage not ready yet — connect the Redis database first.</div>'; return; }
-    const { votes, total } = await rRes.json();
+    const { votes, total, subscribers = [] } = await rRes.json();
     const artists = await rArtists.json();
     const byIndex = Object.fromEntries(artists.map(a => [a.index, a]));
     const ranked = Object.entries(votes)
@@ -71,7 +71,25 @@ async function load() {
     ranked.forEach((a, i) => {
       html += `<tr><td class="rank">${i + 1}</td><td>${a.name}<span class="loc">${a.location}</span></td><td>${a.title}</td><td class="votes">${a.n}</td></tr>`;
     });
-    out.innerHTML = html + "</table>";
+    html += "</table>";
+    html += `<div class="total" style="margin-top:48px"><b>${subscribers.length}</b>newsletter subscribers`;
+    if (subscribers.length) html += ' · <a href="#" id="copy-subs" style="color:var(--gold)">copy all</a>';
+    html += "</div>";
+    if (subscribers.length) {
+      html += '<table><tr><th></th><th>Email</th><th style="text-align:right">Joined</th></tr>';
+      subscribers.forEach((s, i) => {
+        const d = s.ts ? s.ts.slice(0, 10) : "—";
+        html += `<tr><td class="rank">${i + 1}</td><td>${s.email.replace(/</g, "&lt;")}</td><td style="text-align:right;color:var(--mist);font-size:12px">${d}</td></tr>`;
+      });
+      html += "</table>";
+    }
+    out.innerHTML = html;
+    const copyBtn = document.getElementById("copy-subs");
+    if (copyBtn) copyBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      navigator.clipboard.writeText(subscribers.map(s => s.email).join("\n"));
+      copyBtn.textContent = "copied ✓";
+    });
   } catch (e) {
     out.innerHTML = '<div class="err">Could not load results.</div>';
   }

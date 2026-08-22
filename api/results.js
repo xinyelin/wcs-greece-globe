@@ -39,7 +39,14 @@ module.exports = async (req, res) => {
       votes[flat[i]] = n;
       total += n;
     }
-    return res.status(200).json({ votes, total });
+    const subEmails = (await redis(["SMEMBERS", "subs"])) || [];
+    const tsFlat = (await redis(["HGETALL", "subs:ts"])) || [];
+    const ts = {};
+    for (let i = 0; i < tsFlat.length; i += 2) ts[tsFlat[i]] = tsFlat[i + 1];
+    const subscribers = subEmails
+      .map((email) => ({ email, ts: ts[email] || "" }))
+      .sort((a, b) => (a.ts < b.ts ? -1 : 1));
+    return res.status(200).json({ votes, total, subscribers });
   } catch (e) {
     return res.status(500).json({ error: "Storage error" });
   }
