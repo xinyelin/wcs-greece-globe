@@ -1378,12 +1378,29 @@ voteBtn.addEventListener("click", () => {
   if (currentArtist) submitVote(voteBtn, currentArtist.index);
 });
 
+function closePanel() {
+  panel.classList.remove("open");
+  clearActive();
+  currentArtist = null;
+  controls.autoRotate = !REDUCED_MOTION;
+}
+
+// a click only counts as a click if the pointer barely moved — otherwise it
+// was an orbit drag ending, which shouldn't open anything or dismiss the panel
+let downX = 0, downY = 0;
+renderer.domElement.addEventListener("pointerdown", (e) => { downX = e.clientX; downY = e.clientY; });
+
 renderer.domElement.addEventListener("click", (e) => {
+  if (Math.hypot(e.clientX - downX, e.clientY - downY) > 6) return;
   setMouse(e);
   raycaster.setFromCamera(mouse, camera);
 
   const hits = raycaster.intersectObjects(markers);
-  if (!hits.length) return;
+  if (!hits.length) {
+    // empty space — dismiss whatever panel is open, like the overlays' backdrops do
+    if (panel.classList.contains("open")) closePanel();
+    return;
+  }
   // gather every light under the cursor on the near side of the globe
   // (deeper hits are the same cluster; far-side hits are a whole radius away)
   const nearest = hits[0].distance;
@@ -1400,6 +1417,16 @@ renderer.domElement.addEventListener("click", (e) => {
   else openListPanel(cluster);
 });
 
+// clicks that land on page furniture (title copy, hint, mission line…) rather
+// than a control also dismiss the panel; controls that manage or sit above the
+// panel — the panel itself, the canvas (handled above), the stat buttons, the
+// overlays and their trigger buttons, the culture rail — keep it open
+document.addEventListener("click", (e) => {
+  if (!panel.classList.contains("open")) return;
+  if (e.target.closest("#artist-panel, #globe-canvas, .stats, .overlay, .search-btn, .culture-rail")) return;
+  closePanel();
+});
+
 renderer.domElement.addEventListener("pointermove", (e) => {
   setMouse(e);
   raycaster.setFromCamera(mouse, camera);
@@ -1407,12 +1434,7 @@ renderer.domElement.addEventListener("pointermove", (e) => {
   renderer.domElement.style.cursor = hovering ? "pointer" : "grab";
 });
 
-document.getElementById("panel-close").addEventListener("click", () => {
-  panel.classList.remove("open");
-  clearActive();
-  currentArtist = null;
-  controls.autoRotate = !REDUCED_MOTION;
-});
+document.getElementById("panel-close").addEventListener("click", closePanel);
 
 // ---------- search ----------
 const searchOverlay = document.getElementById("search-overlay");
