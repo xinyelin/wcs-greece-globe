@@ -565,9 +565,9 @@
     .social-row{margin-top:12px;gap:16px;}
     .social-row svg{width:15px;height:15px;}
     .meta-block{left:16px;bottom:20px;}
-    /* one bottom bar: stats hold the left corner, the two actions sit
-       side by side in the right corner, all on the same baseline */
-    .mission-block{right:16px;bottom:20px;max-width:none;flex-direction:row;align-items:center;gap:8px;}
+    /* bottom bar: stats hold the left corner; Donate stacks above
+       Subscribe in the right corner, and the globe rests just above */
+    .mission-block{right:16px;bottom:20px;max-width:none;gap:8px;}
     .donate-btn{font-size:9px;letter-spacing:0.2em;padding:11px 16px;}
     .follow-btn{font-size:9px;letter-spacing:0.22em;padding:10px 12px;}
     .follow-btn .fl-long{display:none;}
@@ -1092,6 +1092,12 @@ function globeOffsetX() {
 function globeOffsetY() {
   return camera.aspect < 0.9 ? -0.65 : 0;
 }
+// the orbit target tracks the globe, so moving the globe alone never shifts
+// it on screen; aiming the camera ABOVE the globe is what sinks it toward
+// the bottom-corner actions in portrait
+function lookAboveY() {
+  return camera.aspect < 0.9 ? 2.05 : 0;
+}
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
@@ -1151,7 +1157,7 @@ const globe = new THREE.Group();
 globe.position.x = globeOffsetX();
 globe.position.y = globeOffsetY();
 controls.target.x = globe.position.x;
-controls.target.y = globe.position.y;
+controls.target.y = globe.position.y + lookAboveY();
 controls.update();
 scene.add(globe);
 
@@ -1813,7 +1819,7 @@ window.addEventListener("resize", () => {
   globe.position.x = globeOffsetX();
   globe.position.y = globeOffsetY();
   controls.target.x = globe.position.x;
-  controls.target.y = globe.position.y;
+  controls.target.y = globe.position.y + lookAboveY();
 });
 
 const sunDirView = new THREE.Vector3();
