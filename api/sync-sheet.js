@@ -149,9 +149,29 @@ function rt(text) {
 }
 
 // best-effort: a Notion outage should never fail the sync itself
-async function logToNotion({ artistCount, pending, committed, subscriberCount }) {
+async function logToNotion({ artistCount, pending, committed, subscribers }) {
   if (!NOTION_TOKEN || !NOTION_LOG_PAGE_ID) return false;
   const today = new Date().toISOString().slice(0, 10);
+  let subLine;
+  if (subscribers == null) {
+    subLine = "邮件订阅人数：未知";
+  } else if (!subscribers.length) {
+    subLine = "邮件订阅人数：0";
+  } else {
+    let listStr = subscribers.join("、");
+    // stay well under Notion's 2000-char rich_text limit per block
+    if (listStr.length > 1800) {
+      let shown = [];
+      let len = 0;
+      for (const e of subscribers) {
+        if (len + e.length + 1 > 1750) break;
+        shown.push(e);
+        len += e.length + 1;
+      }
+      listStr = `${shown.join("、")}（其余 ${subscribers.length - shown.length} 个见后台 /results.html）`;
+    }
+    subLine = `邮件订阅人数：${subscribers.length}（${listStr}）`;
+  }
   const children = [
     { object: "block", type: "heading_3", heading_3: { rich_text: rt(`${today} · auto-sync`) } },
     { object: "block", type: "bulleted_list_item", bulleted_list_item: { rich_text: rt(`艺术家总数：${artistCount}`) } },
@@ -167,7 +187,7 @@ async function logToNotion({ artistCount, pending, committed, subscriberCount })
       },
     },
     { object: "block", type: "bulleted_list_item", bulleted_list_item: { rich_text: rt(`是否有新提交：${committed ? "是" : "否"}`) } },
-    { object: "block", type: "bulleted_list_item", bulleted_list_item: { rich_text: rt(`邮件订阅人数：${subscriberCount == null ? "未知" : subscriberCount}`) } },
+    { object: "block", type: "bulleted_list_item", bulleted_list_item: { rich_text: rt(subLine) } },
     { object: "block", type: "divider", divider: {} },
   ];
   const r = await fetch(`https://api.notion.com/v1/blocks/${NOTION_LOG_PAGE_ID}/children`, {
@@ -223,8 +243,8 @@ module.exports = async (req, res) => {
     await redis(["SET", "sync:pending", JSON.stringify(pending)]);
 
     const committed = changed.some(Boolean);
-    const subscriberCount = await redis(["SCARD", "subs"]).catch(() => null);
-    const notionLogged = await logToNotion({ artistCount: artists.length, pending, committed, subscriberCount }).catch(() => false);
+    const subscribers = await redis(["SMEMBERS", "subs"]).catch(() => null);
+    const notionLogged = await logToNotion({ artistCount: artists.length, pending, committed, subscribers }).catch(() => false);
 
     return res.status(200).json({
       ok: true,
