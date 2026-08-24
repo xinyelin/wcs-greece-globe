@@ -705,5 +705,12 @@
     "Cádiz, Spain",
     "Europe",
     "Spain"
+  ],
+  "sunnyvale, usa": [
+    37.3688,
+    -122.0363,
+    "Sunnyvale, CA, USA",
+    "Americas",
+    "United States"
   ]
 }
