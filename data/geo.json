@@ -712,5 +712,19 @@
     "Sunnyvale, CA, USA",
     "Americas",
     "United States"
+  ],
+  "baton rouge, united states": [
+    30.4515,
+    -91.1871,
+    "Baton Rouge, LA, USA",
+    "Americas",
+    "United States"
+  ],
+  "jambi, indonesia": [
+    -1.6101,
+    103.6131,
+    "Jambi, Indonesia",
+    "Asia",
+    "Indonesia"
   ]
 }
