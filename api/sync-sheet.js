@@ -2,6 +2,7 @@
 // geocodes them against data/geo.json, re-renders index.html / classic.html /
 // artists-min.json exactly like build_globe.py does locally, and publishes the
 // generated files to GitHub in one atomic commit.
+// Production sync revision: atomic-v1.
 //
 // Visitors never talk to Google directly. A failed sync leaves the last good
 // production snapshot intact instead of exposing a partially updated dataset.
