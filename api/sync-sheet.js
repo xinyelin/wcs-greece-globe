@@ -1,10 +1,10 @@
 // Weekly cron job: pulls new rows from the artist-submission Google Sheet,
 // geocodes them against data/geo.json, re-renders index.html / classic.html /
-// artists-min.json exactly like build_globe.py does locally, and commits any
-// change straight to GitHub — which Vercel's git integration then deploys.
+// artists-min.json exactly like build_globe.py does locally, and publishes the
+// generated files to GitHub in one atomic commit.
 //
-// Visitors never talk to Google directly: only this scheduled job does, so a
-// slow or failing Sheet just means next week's sync is late, not a broken site.
+// Visitors never talk to Google directly. A failed sync leaves the last good
+// production snapshot intact instead of exposing a partially updated dataset.
 
 const crypto = require("crypto");
 const fs = require("fs");
@@ -98,15 +98,38 @@ function buildArtists(rows, geo) {
 function render(template, dataJs, landmask) {
   let html = template;
   const start = html.indexOf("/*__DATA__*/");
-  const end = html.indexOf("/*__END__*/") + "/*__END__*/".length;
-  html = html.slice(0, start) + dataJs + html.slice(end);
-  if (landmask) html = html.replace("/*__LANDMASK__*/", landmask);
+  const endMarker = "/*__END__*/";
+  const endAt = html.indexOf(endMarker);
+  if (start < 0 || endAt < 0 || endAt < start) throw new Error("Template data markers missing or invalid");
+  html = html.slice(0, start) + dataJs + html.slice(endAt + endMarker.length);
+  if (landmask) {
+    if (!html.includes("/*__LANDMASK__*/")) throw new Error("Globe template landmask marker missing");
+    html = html.replace("/*__LANDMASK__*/", landmask);
+  }
   return html;
 }
 
+function ghHeaders() {
+  return {
+    Authorization: `Bearer ${GITHUB_TOKEN}`,
+    Accept: "application/vnd.github+json",
+    "Content-Type": "application/json",
+    "X-GitHub-Api-Version": "2022-11-28",
+  };
+}
+
+async function ghJson(endpoint, options = {}) {
+  const r = await fetch(`https://api.github.com/repos/${GITHUB_REPO}${endpoint}`, {
+    ...options,
+    headers: { ...ghHeaders(), ...(options.headers || {}) },
+  });
+  if (!r.ok) throw new Error(`github ${options.method || "GET"} ${endpoint} ${r.status}: ${await r.text()}`);
+  return r.status === 204 ? null : r.json();
+}
+
 async function ghGet(filePath) {
-  const r = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${filePath}`, {
-    headers: { Authorization: `Bearer ${GITHUB_TOKEN}`, Accept: "application/vnd.github+json" },
+  const r = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${filePath}?ref=main`, {
+    headers: ghHeaders(),
   });
   if (r.status === 404) return null;
   if (!r.ok) throw new Error(`github get ${filePath} ${r.status}: ${await r.text()}`);
@@ -114,25 +137,40 @@ async function ghGet(filePath) {
   return { sha: j.sha, content: Buffer.from(j.content, "base64").toString("utf-8") };
 }
 
-async function ghPut(filePath, content, sha, message) {
-  const r = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${filePath}`, {
-    method: "PUT",
-    headers: { Authorization: `Bearer ${GITHUB_TOKEN}`, Accept: "application/vnd.github+json" },
-    body: JSON.stringify({
-      message,
-      content: Buffer.from(content, "utf-8").toString("base64"),
-      sha: sha || undefined,
-      branch: "main",
-    }),
-  });
-  if (!r.ok) throw new Error(`github put ${filePath} ${r.status}: ${await r.text()}`);
-}
+async function publishGeneratedFiles(files, message) {
+  const changedFiles = [];
+  for (const file of files) {
+    const current = await ghGet(file.path);
+    if (!current || current.content !== file.content) changedFiles.push(file);
+  }
+  if (!changedFiles.length) return { committed: false, changedPaths: [] };
 
-async function commitIfChanged(filePath, content, message) {
-  const current = await ghGet(filePath);
-  if (current && current.content === content) return false;
-  await ghPut(filePath, content, current ? current.sha : undefined, message);
-  return true;
+  const treeEntries = [];
+  for (const file of changedFiles) {
+    const blob = await ghJson("/git/blobs", {
+      method: "POST",
+      body: JSON.stringify({ content: file.content, encoding: "utf-8" }),
+    });
+    treeEntries.push({ path: file.path, mode: "100644", type: "blob", sha: blob.sha });
+  }
+
+  const ref = await ghJson("/git/ref/heads/main");
+  const baseCommitSha = ref.object.sha;
+  const baseCommit = await ghJson(`/git/commits/${baseCommitSha}`);
+  const tree = await ghJson("/git/trees", {
+    method: "POST",
+    body: JSON.stringify({ base_tree: baseCommit.tree.sha, tree: treeEntries }),
+  });
+  const commit = await ghJson("/git/commits", {
+    method: "POST",
+    body: JSON.stringify({ message, tree: tree.sha, parents: [baseCommitSha] }),
+  });
+  await ghJson("/git/refs/heads/main", {
+    method: "PATCH",
+    body: JSON.stringify({ sha: commit.sha, force: false }),
+  });
+
+  return { committed: true, changedPaths: changedFiles.map((f) => f.path), commitSha: commit.sha };
 }
 
 async function redis(cmd) {
@@ -148,30 +186,11 @@ function rt(text) {
   return [{ type: "text", text: { content: text } }];
 }
 
-// best-effort: a Notion outage should never fail the sync itself
-async function logToNotion({ artistCount, pending, committed, subscribers }) {
+async function logToNotion({ artistCount, pending, committed, subscriberCount, changedPaths }) {
   if (!NOTION_TOKEN || !NOTION_LOG_PAGE_ID) return false;
   const today = new Date().toISOString().slice(0, 10);
-  let subLine;
-  if (subscribers == null) {
-    subLine = "邮件订阅人数：未知";
-  } else if (!subscribers.length) {
-    subLine = "邮件订阅人数：0";
-  } else {
-    let listStr = subscribers.join("、");
-    // stay well under Notion's 2000-char rich_text limit per block
-    if (listStr.length > 1800) {
-      let shown = [];
-      let len = 0;
-      for (const e of subscribers) {
-        if (len + e.length + 1 > 1750) break;
-        shown.push(e);
-        len += e.length + 1;
-      }
-      listStr = `${shown.join("、")}（其余 ${subscribers.length - shown.length} 个见后台 /results.html）`;
-    }
-    subLine = `邮件订阅人数：${subscribers.length}（${listStr}）`;
-  }
+  const subLine = subscriberCount == null ? "邮件订阅人数：未知" : `邮件订阅人数：${subscriberCount}`;
+  const changeLine = committed ? `GitHub 原子发布：${changedPaths.join("、")}` : "GitHub 原子发布：无变更";
   const children = [
     { object: "block", type: "heading_3", heading_3: { rich_text: rt(`${today} · auto-sync`) } },
     { object: "block", type: "bulleted_list_item", bulleted_list_item: { rich_text: rt(`艺术家总数：${artistCount}`) } },
@@ -186,7 +205,7 @@ async function logToNotion({ artistCount, pending, committed, subscribers }) {
         ),
       },
     },
-    { object: "block", type: "bulleted_list_item", bulleted_list_item: { rich_text: rt(`是否有新提交：${committed ? "是" : "否"}`) } },
+    { object: "block", type: "bulleted_list_item", bulleted_list_item: { rich_text: rt(changeLine) } },
     { object: "block", type: "bulleted_list_item", bulleted_list_item: { rich_text: rt(subLine) } },
     { object: "block", type: "divider", divider: {} },
   ];
@@ -228,32 +247,40 @@ module.exports = async (req, res) => {
       artists.map((a) => ({ index: a.index, name: a.name, location: a.location, title: a.title }))
     );
 
-    // sequential, not Promise.all: each Contents API write creates its own
-    // commit on the branch, so writing all three concurrently races them
-    // against each other and 409s
     const message = `Auto-sync: ${artists.length} artists from the submission sheet`;
-    const changed = [
-      await commitIfChanged("index.html", indexHtml, message),
-      await commitIfChanged("classic.html", classicHtml, message),
-      await commitIfChanged("artists-min.json", mini, message),
-    ];
+    const publish = await publishGeneratedFiles(
+      [
+        { path: "index.html", content: indexHtml },
+        { path: "classic.html", content: classicHtml },
+        { path: "artists-min.json", content: mini },
+      ],
+      message
+    );
 
     await redis(["SET", "sync:lastRun", new Date().toISOString()]);
     await redis(["SET", "sync:artistCount", String(artists.length)]);
     await redis(["SET", "sync:pending", JSON.stringify(pending)]);
 
-    const committed = changed.some(Boolean);
     const subscribers = await redis(["SMEMBERS", "subs"]).catch(() => null);
-    const notionLogged = await logToNotion({ artistCount: artists.length, pending, committed, subscribers }).catch(() => false);
+    const subscriberCount = Array.isArray(subscribers) ? subscribers.length : null;
+    const notionLogged = await logToNotion({
+      artistCount: artists.length,
+      pending,
+      committed: publish.committed,
+      subscriberCount,
+      changedPaths: publish.changedPaths,
+    }).catch(() => false);
 
     return res.status(200).json({
       ok: true,
       artists: artists.length,
       pendingLocations: pending,
-      committed,
+      committed: publish.committed,
+      changedPaths: publish.changedPaths,
+      commitSha: publish.commitSha || null,
       notionLogged,
     });
   } catch (e) {
-    return res.status(500).json({ error: String(e && e.message || e) });
+    return res.status(500).json({ error: String((e && e.message) || e) });
   }
 };
