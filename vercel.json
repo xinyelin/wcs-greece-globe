@@ -1,6 +1,4 @@
 {
-  "buildCommand": "node sync-once.js",
-  "outputDirectory": ".",
   "headers": [
     {
       "source": "/(vendor|fonts)/(.*)",
