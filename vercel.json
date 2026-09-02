@@ -1,5 +1,5 @@
 {
-  "buildCommand": "node -e \"(async()=>{const h=require('./api/sync-sheet');let c=200;const req={headers:{authorization:'Bearer '+(process.env.CRON_SECRET||'')}};const res={status(x){c=x;return this},json(x){console.log(JSON.stringify(x));if(c>=400)process.exitCode=1;return x}};await h(req,res);if(c>=400)process.exit(c)})().catch(e=>{console.error(e);process.exit(1)})\"",
+  "buildCommand": "node sync-once.js",
   "outputDirectory": ".",
   "headers": [
     {
