@@ -46,7 +46,7 @@
   "crons": [
     {
       "path": "/api/sync-sheet",
-      "schedule": "43 19 * * *"
+      "schedule": "0 6 * * 1"
     }
   ],
   "functions": {
