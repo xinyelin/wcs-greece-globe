@@ -187,10 +187,29 @@ function rt(text) {
   return [{ type: "text", text: { content: text } }];
 }
 
-async function logToNotion({ artistCount, pending, committed, subscriberCount, changedPaths }) {
+async function logToNotion({ artistCount, pending, committed, subscribers, changedPaths }) {
   if (!NOTION_TOKEN || !NOTION_LOG_PAGE_ID) return false;
   const today = new Date().toISOString().slice(0, 10);
-  const subLine = subscriberCount == null ? "邮件订阅人数：未知" : `邮件订阅人数：${subscriberCount}`;
+  let subLine;
+  if (subscribers == null) {
+    subLine = "邮件订阅人数：未知";
+  } else if (!subscribers.length) {
+    subLine = "邮件订阅人数：0";
+  } else {
+    let listStr = subscribers.join("、");
+    // stay well under Notion's 2000-char rich_text limit per block
+    if (listStr.length > 1800) {
+      let shown = [];
+      let len = 0;
+      for (const e of subscribers) {
+        if (len + e.length + 1 > 1750) break;
+        shown.push(e);
+        len += e.length + 1;
+      }
+      listStr = `${shown.join("、")}（其余 ${subscribers.length - shown.length} 个见后台 /results.html）`;
+    }
+    subLine = `邮件订阅人数：${subscribers.length}（${listStr}）`;
+  }
   const changeLine = committed ? `GitHub 原子发布：${changedPaths.join("、")}` : "GitHub 原子发布：无变更";
   const children = [
     { object: "block", type: "heading_3", heading_3: { rich_text: rt(`${today} · auto-sync`) } },
@@ -263,12 +282,11 @@ module.exports = async (req, res) => {
     await redis(["SET", "sync:pending", JSON.stringify(pending)]);
 
     const subscribers = await redis(["SMEMBERS", "subs"]).catch(() => null);
-    const subscriberCount = Array.isArray(subscribers) ? subscribers.length : null;
     const notionLogged = await logToNotion({
       artistCount: artists.length,
       pending,
       committed: publish.committed,
-      subscriberCount,
+      subscribers,
       changedPaths: publish.changedPaths,
     }).catch(() => false);
 
