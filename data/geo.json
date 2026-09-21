@@ -118,5 +118,9 @@
   "baton rouge, united states": [30.4515,-91.1871,"Baton Rouge, LA, USA","Americas","United States"],
   "jambi, indonesia": [-1.6101,103.6131,"Jambi, Indonesia","Asia","Indonesia"],
   "hendersonville, usa": [35.3187,-82.4612,"Hendersonville, NC, USA","Americas","United States"],
-  "tehran, iran": [35.6892,51.389,"Tehran, Iran","Asia","Iran"]
+  "tehran, iran": [35.6892,51.389,"Tehran, Iran","Asia","Iran"],
+  "fremont, ca, usa": [37.5485,-121.9886,"Fremont, CA, USA","Americas","United States"],
+  "berkeley, ca usa": [37.8715,-122.273,"Berkeley, CA, USA","Americas","United States"],
+  "san rafael, usa": [37.9735,-122.5311,"San Rafael, CA, USA","Americas","United States"],
+  "new york city, usa": [40.7128,-74.006,"New York, NY, USA","Americas","United States"]
 }
