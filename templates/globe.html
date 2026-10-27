@@ -3,8 +3,24 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>World Culture Salon · Chapter I — Greece | One Culture Foundation</title>
-<meta name="description" content="Artists from around the world in conversation with the Greek spirit. An interactive gallery by One Culture Foundation.">
+<title>World Culture Salon · Greece, San Francisco Edition 2026 | One Culture Foundation</title>
+<meta name="description" content="The online gallery of World Culture Salon's Greece chapter, San Francisco Edition 2026: artists from around the world answer one open call on the Greek spirit. Every light is an artist. By One Culture Foundation.">
+<meta name="theme-color" content="#05070f">
+<link rel="canonical" href="https://gallery.oneculturefdn.org/">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="favicon.png">
+<!-- what a shared link shows (WhatsApp, iMessage, LinkedIn, X…). No live counts here: the sync
+     changes them, and a preview card is cached for weeks. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="World Culture Salon · One Culture Foundation">
+<meta property="og:title" content="World Culture Salon · Greece, San Francisco Edition 2026">
+<meta property="og:description" content="The online gallery of World Culture Salon's Greece chapter, San Francisco Edition 2026: artists from around the world answer one open call on the Greek spirit. Every light is an artist.">
+<meta property="og:url" content="https://gallery.oneculturefdn.org/">
+<meta property="og:image" content="https://gallery.oneculturefdn.org/og-chapter-greece.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="A gilded globe scattered with points of light, one for each artist, joined by threads to Athens.">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="fonts.css">
 <style>
   :root{
@@ -19,7 +35,9 @@
     --hairline:rgba(212,180,131,0.22);
   }
   *{box-sizing:border-box;margin:0;padding:0;}
-  html,body{height:100%;overflow:hidden;}
+  html,body{min-height:100%;}
+  /* the full-screen globe holds the page still underneath */
+  body.exploring{overflow:hidden;}
   body{
     background:var(--void);
     color:var(--marble);
@@ -35,9 +53,14 @@
       radial-gradient(ellipse 44% 40% at 5% 96%, rgba(16,46,84,0.18), transparent 60%),
       var(--void);
   }
-  #app{position:relative;width:100vw;height:100vh;z-index:1;}
-  body.fallback-mode #app{height:auto;min-height:100vh;}
-  @supports (height:100dvh){ #app{height:100dvh;} }
+  /* the cover is one screen tall; the chapter's story continues below it. No z-index here, so
+     the artist panel and the overlays inside it can rise above the page sections */
+  #app{position:relative;width:100%;height:100vh;overflow:hidden;}
+  body.fallback-mode #app{height:auto;min-height:100vh;overflow:visible;}
+  @supports (height:100svh){ #app{height:100svh;} }
+  /* explore: the globe takes the whole screen */
+  body.exploring #app{position:fixed;inset:0;height:100vh;z-index:30;background:var(--void);}
+  @supports (height:100dvh){ body.exploring #app{height:100dvh;} }
   #globe-canvas{position:absolute;inset:0;}
 
   /* ---------- loading ---------- */
@@ -120,7 +143,12 @@
      exists on desktop, where the corner has room for it */
   .sig-mark{display:none;}
   @media (min-width:901px){
-    .eyebrow{position:fixed;top:44px;right:52px;text-align:right;z-index:5;}
+    /* the label block spans the cover, so the signature sits in its top-right corner and
+       scrolls away with the cover; it lets clicks through to the globe except on its links */
+    .label-block{right:52px;max-width:none;pointer-events:none;}
+    .label-block>:not(.eyebrow):not(.dek){max-width:430px;}
+    .label-block a,.label-block button{pointer-events:auto;}
+    .eyebrow{position:absolute;top:0;right:0;text-align:right;z-index:5;}
     .chapter{margin-top:0;}
     .sig-mark{display:block;margin-top:14px;}
     /* the mark speaks through opacity alone — no underline like the text links */
@@ -132,6 +160,8 @@
     font-family:'Fraunces',Georgia,serif;font-style:italic;font-weight:300;
     font-size:20px;color:var(--mist);margin-top:22px;
   }
+  .chapter .ed{display:block;}
+  @media (max-width:900px) and (max-height:640px){ .label-block .chapter .ed{display:none;} }
   h1{
     font-family:'Fraunces',Georgia,serif;font-weight:300;
     font-size:76px;line-height:1;letter-spacing:0.01em;
@@ -177,35 +207,22 @@
   body.fallback-mode .search-btn{display:none;}
   /* on desktop the search lives inside the rail, heading the icon column */
   @media (min-width:901px){
+    /* relative, not static, so each button can carry its own label; the offsets the
+       stand-alone button uses on phones are cleared */
     .culture-rail .search-btn{
-      position:static;width:38px;height:38px;flex:none;
-      margin-bottom:8px;animation:none;
+      position:relative;top:auto;right:auto;width:38px;height:38px;flex:none;animation:none;
     }
     .culture-rail .search-btn svg{width:16px;height:16px;}
   }
 
-  /* ---------- culture rail: a quiet spine of Greek ideas, off the globe entirely ---------- */
-  /* the right edge only has the search button above and the mission line
-     below, both short and fixed-height, so a modest fixed clearance clears
-     them at any realistic viewport height. overflow is left visible (no
-     scroll clipping) because the flyout labels below need to escape the
-     rail's own box to the left without being cut off. */
+  /* ---------- the rail: search, explore, then the page's sections, off the globe entirely ---------- */
+  /* quiet buttons under the signature, each naming itself on hover; below the hairline, one per
+     section of the page, gliding there. Overflow stays visible because the labels escape the
+     rail's box to the left. */
   .culture-rail{
-    position:absolute;right:52px;top:190px;bottom:130px;z-index:5;
-    display:flex;flex-direction:column;align-items:center;justify-content:center;
-    gap:10px;padding:6px 2px;
+    position:absolute;right:52px;top:190px;z-index:5;
+    display:flex;flex-direction:column;align-items:center;gap:10px;padding:6px 2px;
     animation:rise 1.2s .4s ease both;
-  }
-  .rail-item{
-    position:relative;width:34px;height:34px;border-radius:50%;flex:none;
-    border:1px solid var(--hairline);background:rgba(9,16,26,0.45);
-    backdrop-filter:blur(4px);color:var(--gold);cursor:pointer;
-    display:flex;align-items:center;justify-content:center;
-    transition:border-color .25s,background .25s,transform .25s;
-  }
-  .rail-item svg{width:15px;height:15px;overflow:visible;}
-  .rail-item:hover,.rail-item:focus-visible{
-    border-color:var(--gold);background:rgba(212,180,131,0.14);transform:scale(1.08);
   }
   .rail-flyout{
     position:absolute;right:52px;top:50%;transform:translateY(-50%) translateX(6px);
@@ -217,9 +234,20 @@
     font-family:'Fraunces',Georgia,serif;font-weight:400;font-size:14px;color:var(--marble);
   }
   .rail-flyout i{font-style:italic;color:var(--gold);font-size:12px;margin-left:8px;}
-  .rail-item:hover .rail-flyout,.rail-item:focus-visible .rail-flyout{
-    opacity:1;transform:translateY(-50%) translateX(0);
+  @media (min-width:901px){
+    .culture-rail .search-btn:hover .rail-flyout,.culture-rail .search-btn:focus-visible .rail-flyout{
+      opacity:1;transform:translateY(-50%) translateX(0);
+    }
   }
+  .rail-rule{width:14px;height:1px;margin:2px 0;background:var(--gold-dim);}
+  @media (min-width:901px) and (max-height:760px){
+    .eyebrow .sig-mark{display:none;}
+    .culture-rail{top:118px;gap:4px;}
+    .culture-rail .search-btn{width:32px;height:32px;}
+    .rail-rule{margin:3px 0;}
+  }
+  @media (min-width:901px) and (max-height:560px){ .culture-rail .rail-go,.rail-rule{display:none;} }
+  @media (max-width:900px){ .rail-flyout{display:none;} }
   body.fallback-mode .culture-rail{display:none;}
 
   /* ---------- shared full-screen overlay (search + explore-Greece) ---------- */
@@ -284,6 +312,13 @@
   }
   #culture-list{margin-top:22px;}
   .lr-greek{font-style:italic;color:var(--gold);font-size:0.82em;margin-left:8px;font-weight:400;}
+  .lr-icon{
+    display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;
+    margin-right:12px;vertical-align:-6px;border:1px solid var(--hairline);border-radius:50%;color:var(--gold);
+  }
+  .lr-icon svg{width:15px;height:15px;overflow:visible;}
+  /* the idea's lines and its text start where its name does, beside the icon */
+  #culture-list .lr-title,#culture-list .lr-loc,#culture-list .row-detail-inner{padding-left:42px;}
 
   /* ---------- stats + legend ---------- */
   .meta-block{position:absolute;bottom:40px;left:52px;z-index:5;animation:rise 1.2s .35s ease both;}
@@ -382,7 +417,7 @@
 
   /* ---------- artist panel ---------- */
   #artist-panel{
-    position:absolute;top:0;right:0;height:100%;width:400px;z-index:10;
+    position:fixed;top:0;right:0;height:100%;width:400px;z-index:35;
     background:linear-gradient(200deg, rgba(14,16,30,0.92), rgba(5,7,15,0.96));
     border-left:1px solid var(--hairline);
     backdrop-filter:blur(14px);
@@ -570,10 +605,10 @@
     *{animation:none !important;transition:none !important;}
   }
   @media (max-width:900px){
-    /* display:contents (not none) so the search button inside the rail
-       escapes to its absolute top-right position; only the icons hide */
+    /* display:contents (not none) so the search and explore buttons inside the rail escape to
+       their own top-right places; the Greek ideas live in the page below on these screens */
     .culture-rail{display:contents;}
-    .culture-rail .rail-item{display:none;}
+    .culture-rail .rail-go,.rail-rule{display:none;}
     .search-btn.culture-btn{display:flex;}
     .label-block{left:24px;top:24px;max-width:300px;}
     h1{font-size:48px;}
@@ -639,20 +674,384 @@
     .meta-block{left:40px;bottom:40px;}
     .mission-block{right:40px;bottom:40px;}
   }
-  /* tablet landscape / small desktop: the headline scales to the room,
-     and the culture rail folds into a single quiet toggle */
-  .rail-toggle{display:none;}
-  .rail-toggle svg{transition:transform .3s ease;}
-  .culture-rail.open .rail-toggle svg{transform:rotate(90deg);}
+  /* tablet landscape / small desktop: the headline scales to the room */
   @media (min-width:901px) and (max-width:1200px){
     h1{font-size:58px;}
-    .label-block{max-width:380px;}
+    .label-block>:not(.eyebrow):not(.dek){max-width:380px;}
     .eyebrow{font-size:15px;}
     .sig-mark img{width:64px;}
-    .rail-toggle{display:flex;}
-    .culture-rail:not(.open) .rail-item:not(.rail-toggle),
-    .culture-rail:not(.open) .search-btn{display:none;}
   }
+
+  /* ---------- the chapter page (2026-10): cover above, the chapter's story below ---------- */
+
+  :focus-visible{outline:1px solid var(--gold);outline-offset:3px;}
+
+  /* the way into the full-screen globe, and the way back */
+  .explore-btn svg{width:17px;height:17px;}
+  .explore-exit{
+    position:absolute;top:calc(16px + env(safe-area-inset-top));left:16px;z-index:8;display:none;
+    align-items:center;gap:10px;height:42px;padding:0 18px 0 16px;border-radius:21px;
+    background:rgba(9,16,26,0.72);border:1px solid var(--gold-dim);color:var(--marble);
+    font-family:inherit;font-size:10px;letter-spacing:0.22em;text-transform:uppercase;cursor:pointer;
+    backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  }
+  .explore-exit:hover,.explore-exit:focus-visible{border-color:var(--gold);color:var(--gold);}
+  body.exploring .explore-exit{display:inline-flex;}
+  body.exploring .label-block,body.exploring .meta-block,body.exploring .mission-block,
+  body.exploring .scroll-cue{display:none;}
+  body.exploring .explore-btn{border-color:var(--gold);background:rgba(212,180,131,0.14);}
+  body.fallback-mode .explore-btn,body.fallback-mode .scroll-cue,body.fallback-mode .tray{display:none;}
+
+  /* the one cue that there is more below the cover */
+  .scroll-cue{
+    position:absolute;left:50%;bottom:calc(8px + env(safe-area-inset-bottom));z-index:6;
+    background:none;border:0;color:var(--mist);font-family:inherit;font-size:10px;
+    letter-spacing:0.3em;text-transform:uppercase;padding:10px 14px;cursor:pointer;
+    animation:riseCentered 1.2s .7s ease both;
+  }
+  .scroll-cue span{display:inline-block;margin-left:6px;color:var(--gold);animation:cueBob 2.6s ease-in-out 2.6s infinite;}
+  .scroll-cue:hover,.scroll-cue:focus-visible{color:var(--gold);}
+  @keyframes cueBob{0%,100%{transform:none;}50%{transform:translateY(3px);}}
+
+  /* phones and tablets: the cover keeps the title and the globe, and gives its bottom to the
+     artists themselves; the stats live in the sentence, the actions further down the page */
+  .tray{display:none;}
+  @media (max-width:900px){
+    .meta-block,.mission-block{display:none;}
+    #culture-btn{display:none;}
+    #explore-btn{right:100px;}
+    .tray{display:block;position:absolute;left:0;right:0;bottom:calc(44px + env(safe-area-inset-bottom));z-index:6;}
+    .tray[hidden]{display:none;}
+    .tray-head{
+      display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 20px 6px;
+      font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:var(--mist);
+    }
+    .tray-head i{font-style:normal;opacity:0.7;}
+    .tray-count{display:flex;align-items:center;gap:4px;white-space:nowrap;}
+    .tray-count b{color:var(--gold);font-weight:400;}
+    .tray-all{
+      margin-left:10px;min-height:32px;padding:0 12px;border:1px solid var(--gold-dim);background:rgba(9,16,26,0.5);
+      color:var(--gold);font-family:inherit;font-size:10px;letter-spacing:0.22em;text-transform:uppercase;cursor:pointer;
+    }
+    .tray-track{
+      display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;overscroll-behavior-x:contain;
+      padding:2px calc((100% - min(76vw,300px)) / 2) 4px;scrollbar-width:none;
+    }
+    .tray-track::-webkit-scrollbar{display:none;}
+    .tray-card{
+      flex:none;width:min(76vw,300px);scroll-snap-align:center;scroll-snap-stop:always;
+      display:flex;flex-direction:column;gap:3px;min-height:90px;padding:12px 15px 13px;text-align:left;
+      /* solid, not blurred: 143 blurred layers over a live globe is too much for a phone */
+      background:rgba(8,11,22,0.92);border:1px solid var(--hairline);border-radius:3px;color:var(--marble);
+      font-family:inherit;cursor:pointer;
+      transition:border-color .3s,background .3s,opacity .3s;opacity:0.62;
+    }
+    .tray-card.is-current{opacity:1;border-color:var(--gold-dim);background:rgba(13,18,33,0.96);}
+    .tc-loc{font-size:9.5px;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .tc-name{font-family:'Fraunces',Georgia,serif;font-weight:300;font-size:19px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .tc-title{font-family:'Fraunces',Georgia,serif;font-style:italic;font-size:13.5px;color:var(--mist);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  }
+  @media (max-width:700px){
+    #explore-btn{right:66px;}
+    .label-block .social-row{display:none;}
+  }
+  /* a phone on its side: the title stays compact on the left, the globe takes the right, and the
+     artists are a scroll away (the tray has no room) */
+  @media (max-width:900px) and (max-height:500px) and (orientation:landscape){
+    .tray{display:none !important;}
+    .label-block{top:14px;left:24px;right:auto;max-width:46%;}
+    .eyebrow{font-size:11.5px;letter-spacing:0.24em;}
+    .eyebrow .salon{font-size:9.5px;}
+    .chapter{margin-top:8px;font-size:13px;}
+    h1{font-size:34px;line-height:1.02;}
+    .dek{font-size:12px;line-height:1.55;margin-top:8px;max-width:40ch;}
+    .label-block .social-row,.diplomacy{display:none;}
+  }
+
+  /* phones: the artist opens in a sheet from the bottom, with the globe still in view above it */
+  .panel-top{position:sticky;top:0;z-index:3;flex:none;display:flex;justify-content:flex-end;}
+  .panel-top .panel-close{position:static;}
+  .sheet-pill{display:none;}
+  #sheet-scrim{display:none;}
+  .panel-nav{display:flex;align-items:center;gap:8px;}
+  .pn-btn{
+    flex:none;width:46px;height:42px;border:1px solid var(--hairline);background:none;color:var(--gold);
+    font-family:'Fraunces',Georgia,serif;font-size:22px;line-height:1;cursor:pointer;transition:border-color .25s,background .25s;
+  }
+  .pn-share{
+    flex:1;height:42px;border:1px solid var(--hairline);background:none;color:var(--marble);
+    font-family:inherit;font-size:10px;letter-spacing:0.24em;text-transform:uppercase;cursor:pointer;
+    transition:border-color .25s,color .25s;
+  }
+  .pn-btn:hover,.pn-btn:focus-visible{border-color:var(--gold);background:rgba(212,180,131,0.1);}
+  .pn-share:hover,.pn-share:focus-visible{border-color:var(--gold);color:var(--gold);}
+  @media (max-width:700px){
+    #artist-panel{
+      top:auto;left:0;right:0;bottom:0;width:100%;height:auto;max-height:76vh;
+      border-left:0;border-top:1px solid var(--gold-dim);border-radius:16px 16px 0 0;
+      transform:translateY(103%);padding:0 20px calc(30px + env(safe-area-inset-bottom));
+      overscroll-behavior:contain;
+    }
+    @supports (height:100svh){ #artist-panel{max-height:76svh;} }
+    .panel-top{
+      height:56px;margin:0 -20px -6px;padding:0 14px;align-items:center;touch-action:none;cursor:grab;
+      background:linear-gradient(rgba(12,15,28,0.98) 74%,rgba(12,15,28,0));
+    }
+    .sheet-pill{
+      display:block;position:absolute;left:50%;top:9px;width:42px;height:4px;margin-left:-21px;
+      border-radius:2px;background:rgba(212,180,131,0.5);
+    }
+    .panel-top .panel-close{width:40px;height:40px;margin:8px 0 0;}
+    #sheet-scrim{
+      display:block;position:fixed;inset:0;z-index:34;background:rgba(3,5,10,0.5);
+      opacity:0;pointer-events:none;transition:opacity .3s ease;
+    }
+    body.sheet-open #sheet-scrim{opacity:1;pointer-events:auto;}
+  }
+
+  /* ---------- the bar that appears once the cover has scrolled away ---------- */
+  .topbar{
+    position:fixed;top:0;left:0;right:0;z-index:25;display:flex;align-items:center;gap:14px;
+    padding:10px 20px;padding-top:calc(10px + env(safe-area-inset-top));
+    background:rgba(5,7,15,0.86);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+    border-bottom:1px solid rgba(212,180,131,0.14);transform:translateY(-110%);transition:transform .35s ease;
+  }
+  body.past-cover .topbar{transform:none;}
+  body.exploring .topbar{transform:translateY(-110%);}
+  .topbar-mark{display:flex;flex:none;}
+  .topbar-mark img{width:30px;height:auto;display:block;opacity:0.85;}
+  .topbar-title{
+    flex:1;min-width:0;font-size:10.5px;letter-spacing:0.24em;text-transform:uppercase;color:var(--mist);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .topbar-title b{color:var(--gold);font-weight:400;}
+  .topbar-btn{
+    flex:none;display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 14px;
+    border:1px solid var(--gold-dim);background:none;color:var(--gold);
+    font-family:inherit;font-size:10px;letter-spacing:0.22em;text-transform:uppercase;cursor:pointer;
+    transition:border-color .25s,background .25s;
+  }
+  .topbar-btn svg{width:16px;height:16px;flex:none;}
+  .toast{
+    position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));z-index:60;
+    transform:translate(-50%,12px);opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;
+    padding:11px 18px;background:rgba(12,16,30,0.94);border:1px solid var(--gold-dim);color:var(--marble);
+    font-size:11px;letter-spacing:0.2em;text-transform:uppercase;white-space:nowrap;
+  }
+  .toast.show{opacity:1;transform:translate(-50%,0);}
+  .topbar-btn:hover,.topbar-btn:focus-visible{border-color:var(--gold);background:rgba(212,180,131,0.1);}
+  @media (max-width:560px){
+    .topbar-title .tt-long,.topbar-btn .tb-label{display:none;}
+    .topbar-btn{width:40px;padding:0;justify-content:center;}
+  }
+  @media (min-width:901px){ .topbar{padding-left:52px;padding-right:52px;} }
+
+  /* ---------- the chapter, below the cover ---------- */
+  .chapter-page{position:relative;z-index:2;background:var(--void);}
+  .ch-wrap{max-width:1120px;margin:0 auto;padding:0 52px;}
+  .ch-section{padding:clamp(76px,9vw,128px) 0;border-top:1px solid rgba(212,180,131,0.1);scroll-margin-top:58px;}
+  .ch-section:first-child{border-top:0;}
+  .ch-eyebrow{font-size:11px;letter-spacing:0.32em;text-transform:uppercase;color:var(--gold);font-weight:400;}
+  .ch-title{
+    font-family:'Fraunces',Georgia,serif;font-weight:300;font-size:clamp(34px,4.4vw,58px);
+    line-height:1.05;color:var(--marble);margin-top:14px;text-wrap:balance;
+  }
+  .ch-title em{color:var(--gold);font-style:italic;}
+  .ch-lede{max-width:54ch;margin-top:20px;font-size:16px;line-height:1.75;color:#c3cdd9;}
+  .ch-body{max-width:56ch;font-size:16px;line-height:1.8;color:#c3cdd9;}
+  .ch-body p+p{margin-top:1.1em;}
+  .ch-body a{color:var(--marble);text-decoration:underline;text-decoration-color:var(--gold-dim);text-underline-offset:4px;}
+  .ch-body a:hover,.ch-body a:focus-visible{text-decoration-color:var(--gold);}
+  .ch-split{display:grid;gap:30px;}
+  @media (min-width:901px){ .ch-split{grid-template-columns:minmax(0,5fr) minmax(0,6fr);column-gap:72px;align-items:start;} }
+  .ch-quote{
+    margin:28px 0;padding-left:20px;border-left:1px solid var(--gold);
+    font-family:'Fraunces',Georgia,serif;font-style:italic;font-weight:300;
+    font-size:clamp(21px,2.2vw,27px);line-height:1.42;color:var(--marble);
+  }
+  .ch-btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:46px;padding:0 22px;
+    border:1px solid var(--gold-dim);background:rgba(9,16,26,0.45);color:var(--gold);
+    font-family:inherit;font-size:10.5px;letter-spacing:0.26em;text-transform:uppercase;text-decoration:none;
+    cursor:pointer;transition:border-color .25s,background .25s,color .25s;
+  }
+  .ch-btn:hover,.ch-btn:focus-visible{border-color:var(--gold);background:rgba(212,180,131,0.12);}
+  .ch-btn--solid{background:var(--gold);border-color:var(--gold);color:#171008;font-weight:500;}
+  .ch-btn--solid:hover,.ch-btn--solid:focus-visible{background:#f6e7c1;color:#0d0a04;}
+  .ch-link{
+    display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 4px;color:var(--mist);
+    font-size:10.5px;letter-spacing:0.26em;text-transform:uppercase;text-decoration:none;
+  }
+  .ch-link:hover,.ch-link:focus-visible{color:var(--gold);}
+
+  /* the record: dated entries on a thread of the globe's gold light, drawn as it is read */
+  .record{list-style:none;position:relative;margin-top:clamp(40px,5vw,64px);--drawn:1;}
+  .record::before,.record::after{content:"";position:absolute;left:6px;top:8px;width:1px;}
+  .record::before{bottom:8px;background:rgba(212,180,131,0.16);}
+  .record::after{
+    height:calc((100% - 16px) * var(--drawn));
+    background:linear-gradient(to bottom,rgba(240,220,180,0.95),rgba(212,180,131,0.55));
+    box-shadow:0 0 9px rgba(240,220,180,0.45);
+  }
+  .rec{position:relative;display:flex;flex-direction:column;gap:14px;padding:0 0 clamp(48px,6vw,72px) 40px;}
+  .rec:last-child{padding-bottom:0;}
+  .rec::before{
+    content:"";position:absolute;left:2px;top:4px;width:9px;height:9px;border-radius:50%;z-index:1;
+    background:#3a3426;transition:background .6s ease,box-shadow .6s ease;
+  }
+  .rec.is-lit::before{background:#f0dcb4;box-shadow:0 0 0 4px rgba(212,180,131,0.12),0 0 16px 3px rgba(240,220,180,0.55);}
+  .rec--ahead::before,.rec--ahead.is-lit::before{background:var(--void);border:1px solid var(--gold);box-shadow:none;left:1px;}
+  .rec-when{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:11px;letter-spacing:0.24em;text-transform:uppercase;color:var(--gold);}
+  .rec-when span{color:var(--mist);letter-spacing:0.16em;}
+  .rec-kicker{font-family:'Fraunces',Georgia,serif;font-style:italic;font-size:15px;color:var(--mist);}
+  .rec-title{
+    font-family:'Fraunces',Georgia,serif;font-weight:300;font-size:clamp(22px,2.4vw,30px);
+    line-height:1.22;color:var(--marble);margin-top:4px;text-wrap:balance;
+  }
+  .rec-title a{
+    color:inherit;text-decoration:none;
+    background:linear-gradient(var(--gold-dim),var(--gold-dim)) 0 100%/0 1px no-repeat;transition:background-size .45s ease;
+  }
+  .rec-title a:hover,.rec-title a:focus-visible{background-size:100% 1px;}
+  .rec-text{margin-top:10px;max-width:56ch;font-size:15px;line-height:1.75;color:#c3cdd9;}
+  .rec-link{
+    display:inline-flex;align-items:center;gap:8px;margin-top:12px;min-height:44px;padding:0;
+    background:none;border:0;color:var(--gold);font-family:inherit;font-size:10.5px;letter-spacing:0.26em;
+    text-transform:uppercase;text-decoration:none;cursor:pointer;
+  }
+  .rec-link:hover,.rec-link:focus-visible{color:#e3c795;}
+  .rec-img{display:block;aspect-ratio:16/10;overflow:hidden;border:1px solid var(--hairline);background:#0b1120;}
+  .rec-img img{
+    width:100%;height:100%;object-fit:cover;display:block;filter:saturate(0.85) brightness(0.9);
+    transition:filter .5s ease,transform .9s cubic-bezier(.22,.8,.3,1);
+  }
+  .rec-img:hover img{filter:none;transform:scale(1.02);}
+  @media (min-width:901px){
+    .rec{display:grid;grid-template-columns:150px minmax(0,1fr) minmax(0,0.85fr);column-gap:40px;align-items:start;}
+    .rec-when{flex-direction:column;}
+    .rec-main{grid-column:2;grid-row:1;}
+    .rec-img{grid-column:3;grid-row:1;}
+  }
+
+  /* the atlas: the spread of the lights, as a ledger */
+  .ledger{list-style:none;display:grid;gap:12px;max-width:460px;margin:28px 0 32px;}
+  .ledger li{
+    display:grid;grid-template-columns:118px 1fr 34px;align-items:center;gap:14px;
+    font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:var(--mist);
+  }
+  .lg-bar{position:relative;height:1px;background:rgba(212,180,131,0.16);}
+  .lg-bar::after{
+    content:"";position:absolute;left:0;top:-1px;height:3px;width:var(--w);
+    background:var(--gold);box-shadow:0 0 8px rgba(212,180,131,0.5);
+  }
+  .lg-n{text-align:right;font-family:'Fraunces',Georgia,serif;font-size:17px;letter-spacing:0;color:var(--marble);}
+  .atlas-actions{display:flex;flex-wrap:wrap;gap:10px;}
+  @media (max-width:700px){
+    .atlas-actions{display:grid;grid-template-columns:1fr 1fr;}
+    .atlas-actions .ch-btn--globe{grid-column:1/-1;}
+  }
+
+  /* the eight ideas, as the rail they used to form on the cover: their icons, named and always
+     visible, to choose from; the chosen idea is read beside them (below them on a phone) */
+  .ideas{display:grid;gap:26px;margin-top:clamp(32px,4vw,52px);}
+  .ideas-index{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px 6px;}
+  .idea-tab{
+    display:flex;flex-direction:column;align-items:center;gap:8px;min-height:44px;padding:4px 2px;
+    background:none;border:0;color:var(--mist);font-family:inherit;text-align:center;cursor:pointer;
+    transition:color .25s;
+  }
+  .idea-mark{
+    display:flex;align-items:center;justify-content:center;flex:none;width:46px;height:46px;border-radius:50%;
+    border:1px solid var(--hairline);background:rgba(9,16,26,0.45);color:var(--gold);
+    transition:border-color .25s,background .25s,box-shadow .25s;
+  }
+  .idea-mark svg{width:19px;height:19px;overflow:visible;}
+  .idea-name{font-size:10px;letter-spacing:0.16em;text-transform:uppercase;line-height:1.35;}
+  .idea-name i{display:none;}
+  @media (max-width:380px){ .ideas-index{column-gap:2px;} .idea-name{font-size:9px;letter-spacing:0.07em;} }
+  .idea-tab:hover,.idea-tab:focus-visible{color:var(--marble);}
+  .idea-tab:hover .idea-mark,.idea-tab:focus-visible .idea-mark{border-color:var(--gold);}
+  .idea-tab[aria-selected="true"]{color:var(--marble);}
+  .idea-tab[aria-selected="true"] .idea-mark{
+    border-color:var(--gold);background:rgba(212,180,131,0.16);
+    box-shadow:0 0 0 4px rgba(212,180,131,0.08),0 0 18px rgba(240,220,180,0.25);
+  }
+  .ideas-pane{padding-top:26px;border-top:1px solid var(--hairline);min-height:300px;outline-offset:6px;}
+  .ideas-pane>*{animation:ideaIn .45s ease both;}
+  .ideas-pane.is-changing>*{opacity:0;transform:translateY(6px);transition:opacity .18s ease,transform .18s ease;}
+  @keyframes ideaIn{from{opacity:0;transform:translateY(6px);}}
+  .ip-greek{font-family:'Fraunces',Georgia,serif;font-style:italic;font-weight:300;font-size:clamp(36px,4.6vw,58px);line-height:1.05;color:var(--gold);}
+  .ip-term{margin-top:8px;font-family:'Fraunces',Georgia,serif;font-weight:300;font-size:clamp(24px,2.6vw,32px);line-height:1.15;color:var(--marble);}
+  .ip-line{margin-top:10px;font-family:'Fraunces',Georgia,serif;font-style:italic;font-size:17px;line-height:1.5;color:var(--mist);}
+  .ip-body{margin-top:18px;max-width:58ch;font-size:16px;line-height:1.8;color:#c3cdd9;}
+  .ip-place{margin-top:20px;font-size:10.5px;letter-spacing:0.24em;text-transform:uppercase;color:var(--gold);}
+  @media (min-width:901px){
+    .ideas{grid-template-columns:minmax(0,1fr) 260px;column-gap:72px;align-items:start;}
+    .ideas-pane{grid-column:1;grid-row:1;padding-top:6px;border-top:0;}
+    .ideas-index{
+      grid-column:2;grid-row:1;display:flex;flex-direction:column;gap:4px;
+      padding-left:28px;border-left:1px solid var(--hairline);
+    }
+    .idea-tab{flex-direction:row;justify-content:flex-start;gap:14px;padding:4px 0;text-align:left;}
+    .idea-mark{width:40px;height:40px;}
+    .idea-mark svg{width:16px;height:16px;}
+    .idea-name{font-size:11px;letter-spacing:0.2em;}
+    .idea-name i{
+      display:block;margin-top:3px;font-family:'Fraunces',Georgia,serif;font-style:italic;font-size:13px;
+      letter-spacing:0;text-transform:none;color:var(--gold);
+    }
+  }
+
+  /* the journal, in preparation: a cover that says only what is true */
+  .jcover{
+    width:100%;max-width:330px;aspect-ratio:3/4;margin:0;padding:28px 26px 24px;
+    display:flex;flex-direction:column;position:relative;border:1px solid var(--gold-dim);
+    background:radial-gradient(ellipse 80% 55% at 72% 18%,rgba(212,180,131,0.11),transparent 60%),linear-gradient(160deg,#0e1526,#070a14);
+    box-shadow:0 34px 60px -34px rgba(0,0,0,0.9);
+  }
+  .jc-mast{font-family:'Fraunces',Georgia,serif;font-weight:300;font-size:22px;line-height:1.12;color:var(--marble);}
+  .jc-series{margin-top:10px;margin-bottom:24px;font-size:10px;letter-spacing:0.36em;text-transform:uppercase;color:var(--gold);}
+  .jc-no{margin-top:auto;font-family:'Fraunces',Georgia,serif;font-style:italic;font-size:18px;color:var(--mist);}
+  .jc-title{font-family:'Fraunces',Georgia,serif;font-weight:300;font-size:62px;line-height:1;color:var(--marble);}
+  .jc-greek{margin-top:6px;font-family:'Fraunces',Georgia,serif;font-style:italic;font-size:22px;color:var(--gold);}
+  .jc-ed{margin-top:12px;font-family:'Fraunces',Georgia,serif;font-style:italic;font-size:14px;line-height:1.3;color:var(--mist);}
+  .jc-foot{
+    margin-top:26px;padding-top:14px;border-top:1px solid var(--hairline);
+    font-size:9.5px;letter-spacing:0.3em;text-transform:uppercase;color:var(--mist);
+  }
+  .jc-foot span{white-space:nowrap;}
+  .ch-journal .ch-body .ch-btn{margin-top:24px;}
+  .ch-body .ch-title+p{margin-top:22px;}
+  @media (max-width:900px){ .jcover{max-width:250px;} .jc-mast{font-size:19px;} .jc-title{font-size:50px;} }
+
+  /* what comes next: this edition lit; the chapter's next edition and the next country waiting */
+  .chapters{list-style:none;display:flex;gap:clamp(30px,6vw,72px);margin-bottom:clamp(36px,4vw,56px);}
+  .chapters li{display:flex;flex-direction:column;align-items:flex-start;gap:10px;font-size:10.5px;letter-spacing:0.28em;text-transform:uppercase;color:var(--mist);}
+  .chap-dot{width:11px;height:11px;border-radius:50%;border:1px solid var(--gold-dim);}
+  .chapters .is-lit .chap-dot{background:#f0dcb4;border-color:transparent;box-shadow:0 0 0 5px rgba(212,180,131,0.12),0 0 18px 4px rgba(240,220,180,0.5);}
+  .chap-no{font-family:'Fraunces',Georgia,serif;font-size:21px;letter-spacing:0;text-transform:none;color:var(--marble);}
+  .chapters li:not(.is-lit){opacity:0.55;}
+  @media (max-width:600px){
+    .chapters{flex-direction:column;gap:16px;}
+    .chapters li{flex-direction:row;flex-wrap:wrap;align-items:center;gap:6px 14px;letter-spacing:0.2em;}
+  }
+  .next-actions{display:flex;flex-wrap:wrap;align-items:center;gap:12px 14px;margin-top:32px;}
+
+  /* ---------- footer ---------- */
+  .ch-footer{position:relative;z-index:2;background:var(--void);border-top:1px solid rgba(212,180,131,0.12);padding:56px 0 calc(48px + env(safe-area-inset-bottom));}
+  .ch-foot{display:grid;gap:24px;}
+  .ch-foot-mark img{width:84px;height:auto;display:block;opacity:0.75;}
+  .ch-foot-links{display:flex;flex-wrap:wrap;gap:4px 22px;}
+  .ch-foot-links a{padding:9px 0;color:var(--mist);font-size:12px;letter-spacing:0.12em;text-decoration:none;}
+  .ch-foot-links a:hover,.ch-foot-links a:focus-visible{color:var(--gold);}
+  .ch-foot .social-row{margin-top:0;animation:none;}
+  .ch-foot-legal{font-size:11px;letter-spacing:0.06em;color:var(--mist);opacity:0.75;}
+  @media (min-width:901px){
+    .ch-foot{grid-template-columns:auto 1fr auto;align-items:center;column-gap:48px;}
+    .ch-foot-legal{grid-column:1/-1;}
+  }
+  @media (max-width:700px){ .ch-wrap{padding:0 22px;} .ch-section{padding:72px 0;} }
+  @media (prefers-reduced-motion: reduce){ .record{--drawn:1 !important;} }
 </style>
 </head>
 <body>
@@ -670,9 +1069,9 @@
 
   <div class="label-block">
     <div class="eyebrow"><a href="https://www.oneculturefdn.org/" target="_blank" rel="noopener">One Culture Foundation</a><span class="salon">World Culture Salon</span><a class="sig-mark" href="https://www.oneculturefdn.org/" target="_blank" rel="noopener" aria-label="One Culture Foundation"><img src="logo.png" alt=""></a></div>
-    <div class="chapter">Chapter I</div>
+    <div class="chapter">The online gallery<span class="ed">San Francisco Edition, 2026</span></div>
     <h1>Greece, <span class="accent">gathered</span></h1>
-    <p class="dek">Artists from around the world, each answering the Greek spirit from where they stand. Every thread of light returns to Athens.</p>
+    <p class="dek"><span data-count="artists"></span> artists in <span data-count="countries"></span> countries answered one open call: what does the Greek spirit look like from where you stand? Each light is an artist. Every thread returns to Athens.</p>
     <div class="diplomacy">A Nonprofit for Cultural Diplomacy<br><span>Culture is not something to observe, but something to inhabit.</span></div>
     <div class="social-row">
       <a href="https://www.oneculturefdn.org/" target="_blank" rel="noopener" aria-label="One Culture Foundation website">
@@ -723,7 +1122,7 @@
     <div class="overlay-box">
       <div class="overlay-eyebrow">World Culture Salon</div>
       <div class="overlay-title">Follow the Chapter</div>
-      <div class="overlay-sub">Chapter I is still unfolding — artists keep arriving, the vote is open, and the story ends in an exhibition. Leave your email and we'll write when something true happens. No noise, ever.</div>
+      <div class="overlay-sub">The Greece chapter is still unfolding — artists keep arriving, the vote is open, and the story ends in an exhibition. Leave your email and we'll write when something true happens. No noise, ever.</div>
       <form id="follow-form" novalidate>
         <input id="follow-email" type="email" placeholder="Your email" autocomplete="email" spellcheck="false">
         <button type="submit" id="follow-submit">Subscribe</button>
@@ -740,59 +1139,72 @@
     </div>
   </div>
 
-  <nav class="culture-rail" id="culture-rail" aria-label="Search and explore Greek culture">
-    <button class="rail-item rail-toggle" id="rail-toggle" aria-label="Search and explore Greek culture" aria-expanded="false">
-      <svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><circle cx="24" cy="11" r="2.7" fill="currentColor"/><circle cx="24" cy="24" r="2.7" fill="currentColor"/><circle cx="24" cy="37" r="2.7" fill="currentColor"/></svg>
-    </button>
+  <nav class="culture-rail" id="culture-rail" aria-label="Search, explore the globe, and the page's sections">
     <button class="search-btn" id="search-btn" aria-label="Search artists">
       <svg width="19" height="19" viewBox="0 0 20 20" fill="none" aria-hidden="true">
         <circle cx="8.5" cy="8.5" r="6" stroke="currentColor" stroke-width="1.3"/>
         <line x1="13.2" y1="13.2" x2="18" y2="18" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
       </svg>
+      <span class="rail-flyout" aria-hidden="true"><b>Search</b><i>artists, works, cities</i></span>
     </button>
-    <button class="rail-item" data-key="agora" aria-label="Agora">
-      <svg viewBox="0 0 48 48" fill="none"><path d="M16 34V16M32 34V16M12 16h24M10 34h28" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-      <span class="rail-flyout"><b>Agora</b><i>ἀγορά</i></span>
+    <button class="search-btn explore-btn" id="explore-btn" aria-label="Explore the globe full screen">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span class="rail-flyout" aria-hidden="true"><b>Explore the globe</b><i>full screen</i></span>
     </button>
-    <button class="rail-item" data-key="xenia" aria-label="Xenia">
-      <svg viewBox="0 0 48 48" fill="none"><path d="M14 34V18a10 10 0 0 1 20 0v16M10 35h28" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-      <span class="rail-flyout"><b>Xenia</b><i>ξενία</i></span>
+    <span class="rail-rule" aria-hidden="true"></span>
+    <button class="search-btn rail-go" type="button" data-go="intro-title" aria-label="Go to The chapter">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 9.5 12 4l8 5.5M5 9.5h14M6.5 10v8M10 10v8M14 10v8M17.5 10v8M4 20h16" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span class="rail-flyout" aria-hidden="true"><b>The chapter</b><i>what it is</i></span>
     </button>
-    <button class="rail-item" data-key="kairos" aria-label="Kairos">
-      <svg viewBox="0 0 48 48" fill="none"><path d="M14 12H34L24 24L34 36H14L24 24L14 12Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg>
-      <span class="rail-flyout"><b>Kairos</b><i>καιρός</i></span>
+    <button class="search-btn rail-go" type="button" data-go="record-title" aria-label="Go to The record">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v18" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="7" r="1.8" fill="currentColor"/><circle cx="12" cy="12.5" r="1.8" fill="currentColor"/><circle cx="12" cy="18" r="1.8" stroke="currentColor" stroke-width="1.2"/></svg>
+      <span class="rail-flyout" aria-hidden="true"><b>The record</b><i>this edition, so far</i></span>
     </button>
-    <button class="rail-item" data-key="omphalos" aria-label="Omphalos">
-      <svg viewBox="0 0 48 48" fill="none"><ellipse cx="24" cy="26" rx="10" ry="13" stroke="currentColor" stroke-width="1.6"/><path d="M16 21q8 -6 16 0M15 30q9 5 18 0" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-      <span class="rail-flyout"><b>Omphalos</b><i>ὀμφαλός</i></span>
+    <button class="search-btn rail-go" type="button" data-go="atlas-title" aria-label="Go to The atlas">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.3"/><circle cx="9" cy="9.5" r="1.1" fill="currentColor"/><circle cx="15" cy="10.5" r="1.1" fill="currentColor"/><circle cx="11" cy="15.5" r="1.1" fill="currentColor"/><circle cx="16" cy="15" r="0.9" fill="currentColor"/></svg>
+      <span class="rail-flyout" aria-hidden="true"><b>The atlas</b><i>every light an artist</i></span>
     </button>
-    <button class="rail-item" data-key="olive" aria-label="The Olive Branch">
-      <svg viewBox="0 0 48 48" fill="none"><path d="M10 34Q24 20 38 10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><ellipse cx="16" cy="29" rx="4.4" ry="2" transform="rotate(-30 16 29)" stroke="currentColor" stroke-width="1.2"/><ellipse cx="24" cy="21.5" rx="4.4" ry="2" transform="rotate(-35 24 21.5)" stroke="currentColor" stroke-width="1.2"/><ellipse cx="32" cy="14.5" rx="4.4" ry="2" transform="rotate(-40 32 14.5)" stroke="currentColor" stroke-width="1.2"/></svg>
-      <span class="rail-flyout"><b>The Olive Branch</b><i>ἐλαία</i></span>
+    <button class="search-btn spirit-btn rail-go" id="spirit-btn" type="button" data-go="ideas-title" aria-label="Go to The Greek Spirit">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M6 20c2-6 2-11 0-16" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+        <path d="M18 20c-2-6-2-11 0-16" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+        <path d="M6 6c2 1 4 1 6 0M6 11c2 1 4 1 6 0M6 16c2 1 4 1 6 0" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/>
+        <path d="M18 6c-2 1-4 1-6 0M18 11c-2 1-4 1-6 0M18 16c-2 1-4 1-6 0" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/>
+      </svg>
+      <span class="rail-flyout" aria-hidden="true"><b>The Greek Spirit</b><i>eight ideas</i></span>
     </button>
-    <button class="rail-item" data-key="symposium" aria-label="Symposium">
-      <svg viewBox="0 0 48 48" fill="none"><path d="M8 18Q24 34 40 18M6 17q-4 5 3 9M42 17q4 5 -3 9M24 30v10M16 41h16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-      <span class="rail-flyout"><b>Symposium</b><i>συμπόσιον</i></span>
+    <button class="search-btn rail-go" type="button" data-go="journal-title" aria-label="Go to The World Culture Review">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 5.5A2.5 2.5 0 0 1 7.5 3H19v15H7.5A2.5 2.5 0 0 0 5 20.5Z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 20.5A2.5 2.5 0 0 1 7.5 18H19v3H7.5M9 7.5h6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span class="rail-flyout" aria-hidden="true"><b>The World Culture Review</b><i>the journal</i></span>
     </button>
-    <button class="rail-item" data-key="philotimo" aria-label="Philotimo">
-      <svg viewBox="0 0 48 48" fill="none"><path d="M24 8L36 14V26Q36 38 24 42Q12 38 12 26V14Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M24 10V40" stroke="currentColor" stroke-width="1.2"/></svg>
-      <span class="rail-flyout"><b>Philotimo</b><i>φιλότιμο</i></span>
-    </button>
-    <button class="rail-item" data-key="meraki" aria-label="Meraki">
-      <svg viewBox="0 0 48 48" fill="none"><path d="M24 8C32 20 30 30 24 40C18 30 16 20 24 8Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
-      <span class="rail-flyout"><b>Meraki</b><i>μεράκι</i></span>
+    <button class="search-btn rail-go" type="button" data-go="next-title" aria-label="Go to What comes next">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 12h14M13 7l5 5-5 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span class="rail-flyout" aria-hidden="true"><b>What comes next</b><i>partner, follow</i></span>
     </button>
   </nav>
 
-  <div class="hint">Drag to orbit · Scroll to zoom · Select a light to meet its artist</div>
+  <div class="hint" id="hint">Drag to turn · Select a light to meet its artist</div>
+  <button class="scroll-cue" id="scroll-cue" type="button">The chapter<span aria-hidden="true">↓</span></button>
+  <button class="explore-exit" id="explore-exit" type="button"><span aria-hidden="true">✕</span> Back to the chapter</button>
+  <section class="tray" id="tray" aria-label="Artists, in order around the globe from Athens" hidden>
+    <div class="tray-head">
+      <span>Meet the artists <i>· swipe</i></span>
+      <span class="tray-count"><b id="tray-pos">1</b>&nbsp;/&nbsp;<span id="tray-total"></span><button class="tray-all" id="tray-all" type="button">All</button></span>
+    </div>
+    <div class="tray-track" id="tray-track"></div>
+  </section>
   <div class="mission-block">
     <div class="mission">Ideas worth feeling.<br>Culture worth remembering.</div>
     <a class="donate-btn" href="https://www.oneculturefdn.org/donation" target="_blank" rel="noopener" aria-label="Donate to One Culture Foundation">Donate</a>
     <button class="follow-btn" id="follow-btn"><span class="fl-long">Follow the Chapter</span><span class="fl-short">Subscribe</span></button>
   </div>
 
+  <div id="sheet-scrim" aria-hidden="true"></div>
   <aside id="artist-panel" aria-label="Artist detail">
-    <button class="panel-close" id="panel-close" aria-label="Close">✕</button>
+    <div class="panel-top" id="sheet-handle">
+      <span class="sheet-pill" aria-hidden="true"></span>
+      <button class="panel-close" id="panel-close" aria-label="Close">✕</button>
+    </div>
 
     <div id="panel-list" hidden>
       <div class="panel-eyebrow" id="list-eyebrow">A Gathering of Lights</div>
@@ -809,6 +1221,11 @@
     </div>
 
     <div id="panel-detail">
+      <div class="panel-nav">
+        <button class="pn-btn" id="panel-prev" type="button" aria-label="Previous artist">‹</button>
+        <button class="pn-share" id="panel-share" type="button">Share this artist</button>
+        <button class="pn-btn" id="panel-next" type="button" aria-label="Next artist">›</button>
+      </div>
       <div class="artwork">
         <div class="title" id="panel-title"></div>
         <div class="medium" id="panel-medium"></div>
@@ -828,7 +1245,7 @@
   <div id="fallback">
     <div class="fb-head">
       <div class="eyebrow"><a href="https://www.oneculturefdn.org/" target="_blank" rel="noopener">One Culture Foundation</a><span class="salon">World Culture Salon</span></div>
-      <div class="chapter">Chapter I</div>
+      <div class="chapter">San Francisco Edition, 2026</div>
       <h1>Greece, <span class="accent">gathered</span></h1>
       <div class="fb-note">
         This browser cannot display the interactive globe, so here is the full gallery as a list.
@@ -838,6 +1255,179 @@
     <div class="fb-grid" id="fb-grid"></div>
   </div>
 </div>
+
+<header class="topbar" id="topbar">
+  <a class="topbar-mark" href="https://www.oneculturefdn.org/" aria-label="One Culture Foundation"><img src="logo.png" alt=""></a>
+  <span class="topbar-title"><b>Greece</b><span class="tt-long"> · San Francisco Edition</span> · 2026<span class="tt-long"> · World Culture Salon</span></span>
+  <button class="topbar-btn" id="topbar-globe" type="button" aria-label="Back to the globe">
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.4"/><ellipse cx="12" cy="12" rx="3.8" ry="8.5" stroke="currentColor" stroke-width="1.2"/><path d="M3.8 9.4h16.4M3.8 14.6h16.4" stroke="currentColor" stroke-width="1.2"/></svg><span class="tb-label">Globe</span>
+  </button>
+  <button class="topbar-btn" id="topbar-share" type="button" aria-label="Share this page">
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 15V3.5M7.5 8 12 3.5 16.5 8M5 12.5V20h14v-7.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="tb-label">Share</span>
+  </button>
+</header>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<main class="chapter-page" id="chapter">
+  <section class="ch-section" aria-labelledby="intro-title">
+    <div class="ch-wrap ch-split">
+      <div>
+        <p class="ch-eyebrow">World Culture Salon</p>
+        <h2 class="ch-title" id="intro-title">A country, <em>studied slowly</em></h2>
+      </div>
+      <div class="ch-body">
+        <p>World Culture Salon is a program of <a href="https://www.oneculturefdn.org/about">One Culture Foundation</a>, a U.S. 501(c)(3) nonprofit for cultural diplomacy. Each chapter turns to one civilization and asks what of it still reaches us directly: through art, scholarship and the senses.</p>
+        <blockquote class="ch-quote">A Country Chapter is not an event. It is a civilization studied slowly.</blockquote>
+        <p>A gathering becomes research; research draws in artists and scholars; their work shapes an online gallery and, in time, a record the public can enter. This page is that record for the Greece chapter, in its first edition: San Francisco, 2026.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="ch-section" aria-labelledby="record-title">
+    <div class="ch-wrap">
+      <p class="ch-eyebrow">The record</p>
+      <h2 class="ch-title" id="record-title">This edition, <em>so far</em></h2>
+      <ol class="record" id="record">
+        <li class="rec">
+          <p class="rec-when"><time datetime="2026-06">June 2026</time><span>SF Design Week</span></p>
+          <a class="rec-img" href="https://www.oneculturefdn.org/post/worldculturesalon-culture-and-immersive-healing-art-exhibition-at-sf-design-week" tabindex="-1" aria-hidden="true"><img src="https://static.wixstatic.com/media/04a8a4_c80fdc1cbb2649ddb9ce5a1034bb1328~mv2.png/v1/fill/w_960,h_600,al_c,q_80,enc_jpg/soft-threshold.jpg" alt="" width="960" height="600" loading="lazy" decoding="async"></a>
+          <div class="rec-main">
+            <p class="rec-kicker">The series opens</p>
+            <h3 class="rec-title"><a href="https://www.oneculturefdn.org/post/worldculturesalon-culture-and-immersive-healing-art-exhibition-at-sf-design-week">In an Age of Acceleration, We Gather to Remember Slower Ways of Being Human</a></h3>
+            <p class="rec-text">Soft Threshold, an afternoon of scent, sound, image and touch, opens World Culture Salon and announces its first chapter: Greece.</p>
+            <a class="rec-link" href="https://www.oneculturefdn.org/post/worldculturesalon-culture-and-immersive-healing-art-exhibition-at-sf-design-week">Read the story <span aria-hidden="true">↗</span></a>
+          </div>
+        </li>
+        <li class="rec">
+          <p class="rec-when"><time datetime="2026-06">June 2026</time><span>Open call</span></p>
+          <a class="rec-img" href="https://www.oneculturefdn.org/post/art-open-call-the-spirit-of-greek-culture" tabindex="-1" aria-hidden="true"><img src="https://static.wixstatic.com/media/04a8a4_2b1957a93b154e40ad4cd8ac33f716da~mv2.jpg/v1/fill/w_960,h_600,al_c,q_80,enc_jpg/open-call.jpg" alt="" width="960" height="600" loading="lazy" decoding="async"></a>
+          <div class="rec-main">
+            <p class="rec-kicker">Artists are invited</p>
+            <h3 class="rec-title"><a href="https://www.oneculturefdn.org/post/art-open-call-the-spirit-of-greek-culture">An Invitation to Explore the Spirit of Greek Culture</a></h3>
+            <p class="rec-text">Artists everywhere are asked to answer the Greek spirit, in any medium. The lights on the globe above are their answers.</p>
+            <a class="rec-link" href="https://www.oneculturefdn.org/post/art-open-call-the-spirit-of-greek-culture">Read the open call <span aria-hidden="true">↗</span></a>
+          </div>
+        </li>
+        <li class="rec">
+          <p class="rec-when"><time datetime="2026-07">July 2026</time><span>San Francisco Bay Area</span></p>
+          <a class="rec-img" href="https://www.oneculturefdn.org/post/world-culture-salon-opens-its-first-chapter-beginning-with-a-table-set-for-eight" tabindex="-1" aria-hidden="true"><img src="https://static.wixstatic.com/media/04a8a4_d7c0a7d4e5714e5d8eeefa850e144ab0~mv2.png/v1/fill/w_960,h_600,al_c,q_80,enc_jpg/afternoon-tea.jpg" alt="" width="960" height="600" loading="lazy" decoding="async"></a>
+          <div class="rec-main">
+            <p class="rec-kicker">The first gathering</p>
+            <h3 class="rec-title"><a href="https://www.oneculturefdn.org/post/world-culture-salon-opens-its-first-chapter-beginning-with-a-table-set-for-eight">Beginning With a Table Set for Eight</a></h3>
+            <p class="rec-text">An afternoon tea in the spirit of the Greek symposion: eight guests from six countries at one table, and a long conversation about beauty.</p>
+            <a class="rec-link" href="https://www.oneculturefdn.org/post/world-culture-salon-opens-its-first-chapter-beginning-with-a-table-set-for-eight">Read the story <span aria-hidden="true">↗</span></a>
+          </div>
+        </li>
+        <li class="rec rec--ahead">
+          <p class="rec-when"><span>Ahead</span></p>
+          <div class="rec-main">
+            <p class="rec-kicker">Still unfolding</p>
+            <h3 class="rec-title">A year-end journal, and a first public evening</h3>
+            <p class="rec-text">Selected works will be gathered in this edition's issue of <em>The World Culture Review</em>, the Salon's year-end journal, and in 2027 the chapter holds its first public evening in San Francisco.</p>
+            <button class="rec-link" type="button" data-follow>Follow the chapter <span aria-hidden="true">→</span></button>
+          </div>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="ch-section" aria-labelledby="atlas-title">
+    <div class="ch-wrap ch-split">
+      <div>
+        <p class="ch-eyebrow">The atlas</p>
+        <h2 class="ch-title" id="atlas-title">Every light <em>is an artist</em></h2>
+      </div>
+      <div class="ch-body">
+        <p><span data-count="artists"></span> artists from <span data-count="cities"></span> cities in <span data-count="countries"></span> countries each sent a work and a few lines on what the Greek spirit means from where they stand.</p>
+        <ul class="ledger" id="ledger" aria-label="Artists by continent"></ul>
+        <div class="atlas-actions">
+          <button class="ch-btn" type="button" data-atlas="all">All artists</button>
+          <button class="ch-btn" type="button" data-atlas="countries">By country</button>
+          <button class="ch-btn" type="button" data-atlas="cities">By city</button>
+          <button class="ch-btn" type="button" data-atlas="search">Search</button>
+          <button class="ch-btn ch-btn--globe" type="button" data-atlas="explore">Explore the globe</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="ch-section" aria-labelledby="ideas-title">
+    <div class="ch-wrap">
+      <p class="ch-eyebrow">The Greek spirit</p>
+      <h2 class="ch-title" id="ideas-title">Eight ideas that <em>outlasted the myths</em></h2>
+      <p class="ch-lede">Words the Greeks kept because ordinary language wasn't enough, each one still standing somewhere on the map.</p>
+      <div class="ideas">
+        <div class="ideas-index" id="ideas-index" role="tablist" aria-label="The eight ideas"></div>
+        <article class="ideas-pane" id="ideas-pane" role="tabpanel" tabindex="0"></article>
+      </div>
+    </div>
+  </section>
+
+  <section class="ch-section ch-journal" aria-labelledby="journal-title">
+    <div class="ch-wrap ch-split">
+      <figure class="jcover" aria-hidden="true">
+        <span class="jc-mast">The World<br>Culture Review</span>
+        <span class="jc-series">World Culture Salon</span>
+        <span class="jc-no">No. 01</span>
+        <span class="jc-title">Greece</span>
+        <span class="jc-greek">Ἑλλάς</span>
+        <span class="jc-ed">San Francisco Edition, 2026</span>
+        <span class="jc-foot"><span>Year-end journal ·</span> <span>In preparation</span></span>
+      </figure>
+      <div class="ch-body">
+        <p class="ch-eyebrow">In preparation</p>
+        <h2 class="ch-title" id="journal-title">The World Culture <em>Review</em></h2>
+        <p>The open call made a promise: selected works will be gathered in a year-end journal, together with this edition's record and its essays. That journal is <em>The World Culture Review</em>.</p>
+        <p>Every edition closes with an issue of its own, numbered across the Salon; this one will be No. 01. Follow the chapter to hear when it is published.</p>
+        <button class="ch-btn" type="button" data-follow>Follow the chapter</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="ch-section" aria-labelledby="next-title">
+    <div class="ch-wrap">
+      <ol class="chapters" aria-label="Chapters and their editions">
+        <li class="is-lit"><span class="chap-dot"></span><span class="chap-no">Greece</span>San Francisco · 2026</li>
+        <li><span class="chap-dot"></span><span class="chap-no">A new chapter</span>The next country</li>
+      </ol>
+      <p class="ch-eyebrow">What comes next</p>
+      <h2 class="ch-title" id="next-title">Every chapter <em>stays open</em></h2>
+      <p class="ch-lede">Greece is the first chapter, and it does not close. Each new edition comes from a city where the culture lives and is shaped by a guest editor. Every edition leaves its own trace: a lens on the culture, a gathering, the artists it brings in, and an issue of <em>The World Culture Review</em>. The next country is being shaped now, with partners who bring a culture of their own.</p>
+      <div class="next-actions">
+        <a class="ch-btn ch-btn--solid" href="https://www.oneculturefdn.org/partner-with-us?interest=wcs#inquiry">Partner on an edition</a>
+        <button class="ch-btn" type="button" data-follow>Follow the chapter</button>
+        <a class="ch-link" href="https://www.oneculturefdn.org/donation">Donate <span aria-hidden="true">→</span></a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="ch-footer">
+  <div class="ch-wrap ch-foot">
+    <a class="ch-foot-mark" href="https://www.oneculturefdn.org/"><img src="logo.png" alt="One Culture Foundation · World Culture Salon" width="84" height="86"></a>
+    <nav class="ch-foot-links" aria-label="One Culture Foundation">
+      <a href="https://www.oneculturefdn.org/">One Culture Foundation</a>
+      <a href="https://www.oneculturefdn.org/worldculturesalon">World Culture Salon</a>
+      <a href="https://www.oneculturefdn.org/ocf-events">Events</a>
+      <a href="https://www.oneculturefdn.org/about">About</a>
+      <a href="https://www.oneculturefdn.org/partner-with-us">Partner With Us</a>
+      <a href="https://www.oneculturefdn.org/contact">Contact</a>
+      <a href="https://www.oneculturefdn.org/privacy-policy">Privacy Policy</a>
+    </nav>
+    <div class="social-row">
+      <a href="https://www.instagram.com/worldculturesalon" target="_blank" rel="noopener" aria-label="World Culture Salon on Instagram">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12" r="4.1" stroke="currentColor" stroke-width="1.7"/><circle cx="17.2" cy="6.8" r="1.2" fill="currentColor"/></svg>
+      </a>
+      <a href="https://www.linkedin.com/showcase/world-culture-salon/" target="_blank" rel="noopener" aria-label="World Culture Salon on LinkedIn">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM3 9.4h4V21H3zM9.6 9.4h3.8v1.6h.06c.53-.95 1.83-1.95 3.76-1.95 4.02 0 4.78 2.55 4.78 5.86V21h-4v-5.5c0-1.32-.03-3.02-1.9-3.02-1.9 0-2.2 1.43-2.2 2.92V21h-4z"/></svg>
+      </a>
+      <a href="https://worldculturesalon.medium.com/" target="_blank" rel="noopener" aria-label="World Culture Salon on Medium">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><ellipse cx="6.9" cy="12" rx="4.9" ry="5"/><ellipse cx="16.2" cy="12" rx="2.35" ry="4.5"/><ellipse cx="21.1" cy="12" rx="1" ry="4.1"/></svg>
+      </a>
+    </div>
+    <p class="ch-foot-legal">© 2026 One Culture Foundation · A U.S. 501(c)(3) nonprofit · EIN 84&#8209;4432511</p>
+  </div>
+</footer>
 
 <script src="vendor/three.min.js"></script>
 <script src="vendor/OrbitControls.js"></script>
@@ -1033,11 +1623,23 @@ function webglAvailable() {
 const cultureOverlay = document.getElementById("culture-overlay");
 const cultureList = document.getElementById("culture-list");
 
-function renderCultureList(expandKey) {
-  cultureList.innerHTML = CULTURE.map(c => `
+// each idea's mark, drawn once for the rail it used to stand in and now shown beside its name
+const IDEA_ICON = {
+  agora: '<path d="M16 34V16M32 34V16M12 16h24M10 34h28" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
+  xenia: '<path d="M14 34V18a10 10 0 0 1 20 0v16M10 35h28" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
+  kairos: '<path d="M14 12H34L24 24L34 36H14L24 24L14 12Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>',
+  omphalos: '<ellipse cx="24" cy="26" rx="10" ry="13" stroke="currentColor" stroke-width="1.6"/><path d="M16 21q8 -6 16 0M15 30q9 5 18 0" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>',
+  olive: '<path d="M10 34Q24 20 38 10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><ellipse cx="16" cy="29" rx="4.4" ry="2" transform="rotate(-30 16 29)" stroke="currentColor" stroke-width="1.2"/><ellipse cx="24" cy="21.5" rx="4.4" ry="2" transform="rotate(-35 24 21.5)" stroke="currentColor" stroke-width="1.2"/><ellipse cx="32" cy="14.5" rx="4.4" ry="2" transform="rotate(-40 32 14.5)" stroke="currentColor" stroke-width="1.2"/>',
+  symposium: '<path d="M8 18Q24 34 40 18M6 17q-4 5 3 9M42 17q4 5 -3 9M24 30v10M16 41h16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>',
+  philotimo: '<path d="M24 8L36 14V26Q36 38 24 42Q12 38 12 26V14Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M24 10V40" stroke="currentColor" stroke-width="1.2"/>',
+  meraki: '<path d="M24 8C32 20 30 30 24 40C18 30 16 20 24 8Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>',
+};
+
+function renderCultureList(expandKey, list = cultureList) {
+  list.innerHTML = CULTURE.map(c => `
     <div class="list-item" data-key="${c.key}">
       <button class="list-row" aria-expanded="false">
-        <span class="lr-name">${esc(c.term)}<em class="lr-greek">${c.greek}</em></span>
+        <span class="lr-name"><span class="lr-icon" aria-hidden="true"><svg viewBox="0 0 48 48" fill="none">${IDEA_ICON[c.key] || ""}</svg></span>${esc(c.term)}<em class="lr-greek">${c.greek}</em></span>
         <span class="lr-title">${esc(c.oneLiner)}</span>
         <span class="lr-loc">${esc(c.place)}, Greece</span>
         <span class="lr-chevron" aria-hidden="true">＋</span>
@@ -1046,7 +1648,7 @@ function renderCultureList(expandKey) {
     </div>`).join("");
 
   let openItem = null;
-  cultureList.querySelectorAll(".list-item").forEach(item => {
+  list.querySelectorAll(".list-item").forEach(item => {
     const btn = item.querySelector(".list-row");
     const c = CULTURE.find(x => x.key === item.dataset.key);
     btn.addEventListener("click", () => {
@@ -1065,12 +1667,13 @@ function renderCultureList(expandKey) {
       item.classList.add("open");
       btn.setAttribute("aria-expanded", "true");
       openItem = item;
-      setTimeout(() => btn.scrollIntoView({ behavior: "smooth", block: "start" }), 200);
+      // in the overlay the idea rises to the top; in the page it only comes into view
+      setTimeout(() => btn.scrollIntoView({ behavior: "smooth", block: list === cultureList ? "start" : "nearest" }), 200);
     });
   });
 
   if (expandKey) {
-    const item = cultureList.querySelector(`.list-item[data-key="${expandKey}"]`);
+    const item = list.querySelector(`.list-item[data-key="${expandKey}"]`);
     if (item) item.querySelector(".list-row").click();
   }
 }
@@ -1087,9 +1690,10 @@ function closeCultureOverlay() {
 document.getElementById("culture-btn").addEventListener("click", () => openCultureOverlay());
 document.getElementById("culture-close").addEventListener("click", closeCultureOverlay);
 cultureOverlay.addEventListener("click", (e) => { if (e.target === cultureOverlay) closeCultureOverlay(); });
-document.querySelectorAll(".rail-item[data-key]").forEach(btn => {
-  btn.addEventListener("click", () => openCultureOverlay(btn.dataset.key));
-});
+// each section icon in the rail glides to its section
+document.querySelectorAll(".rail-go[data-go]").forEach(btn => btn.addEventListener("click", () => {
+  document.getElementById(btn.dataset.go).closest("section").scrollIntoView({ behavior: SMOOTH, block: "start" });
+}));
 window.addEventListener("keydown", (e) => {
   if (e.key !== "Escape") return;
   if (!cultureOverlay.hidden) closeCultureOverlay();
@@ -1143,14 +1747,141 @@ followForm.addEventListener("submit", async (e) => {
   }
 });
 document.getElementById("follow-btn").addEventListener("click", openFollow);
-// tablet landscape: the culture rail folds into one toggle
-document.getElementById("rail-toggle").addEventListener("click", () => {
-  const rail = document.getElementById("culture-rail");
-  const open = rail.classList.toggle("open");
-  document.getElementById("rail-toggle").setAttribute("aria-expanded", String(open));
-});
 document.getElementById("follow-close").addEventListener("click", closeFollow);
 followOverlay.addEventListener("click", (e) => { if (e.target === followOverlay) closeFollow(); });
+
+// ---------- the chapter page ----------
+const SMOOTH = REDUCED_MOTION ? "auto" : "smooth";
+const COUNT = {
+  artists: ARTISTS.length,
+  cities: new Set(ARTISTS.map(a => a.location)).size,
+  countries: new Set(ARTISTS.map(a => a.country).filter(Boolean)).size,
+};
+document.querySelectorAll("[data-count]").forEach(el => { el.textContent = COUNT[el.dataset.count]; });
+
+// every artist gets a readable address, ?artist=their-name: index numbers are reassigned by each sync
+const BY_SLUG = new Map();
+ARTISTS.forEach(a => {
+  const base = String(a.name || "").toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "artist";
+  let slug = base, n = 2;
+  while (BY_SLUG.has(slug)) slug = base + "-" + n++;
+  a.slug = slug;
+  BY_SLUG.set(slug, a);
+});
+function artistUrl(a) { return location.origin + location.pathname + "?artist=" + encodeURIComponent(a.slug); }
+function setArtistParam(slug) {
+  const u = new URL(location.href);
+  if (slug) u.searchParams.set("artist", slug); else u.searchParams.delete("artist");
+  history.replaceState(null, "", u.pathname + u.search + u.hash);
+}
+// the phone's own share sheet where there is one; otherwise the link is copied
+let toastTimer = null;
+function toast(text) {
+  const t = document.getElementById("toast");
+  t.textContent = text;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 2200);
+}
+async function shareLink(url, title) {
+  if (navigator.share) {
+    try { await navigator.share({ title, url }); return; }
+    catch (e) { if (e && e.name === "AbortError") return; }
+  }
+  try { await navigator.clipboard.writeText(url); toast("Link copied"); }
+  catch (e) { window.prompt("Copy this link", url); }
+}
+
+(function ledger() {
+  const by = new Map();
+  ARTISTS.forEach(a => { const k = a.continent || "Elsewhere"; by.set(k, (by.get(k) || 0) + 1); });
+  const rows = [...by.entries()].sort((x, y) => y[1] - x[1]);
+  const top = rows.length ? rows[0][1] : 1;
+  document.getElementById("ledger").innerHTML = rows.map(([k, n]) =>
+    `<li><span>${esc(k === "Americas" ? "The Americas" : k)}</span><span class="lg-bar" style="--w:${(n / top * 100).toFixed(1)}%"></span><span class="lg-n">${n}</span></li>`).join("");
+})();
+// the eight ideas in the page: their icons to choose from, the chosen one read beside them
+(function ideas() {
+  const index = document.getElementById("ideas-index");
+  const pane = document.getElementById("ideas-pane");
+  index.innerHTML = CULTURE.map(c => `
+    <button class="idea-tab" type="button" role="tab" id="idea-tab-${c.key}" aria-controls="ideas-pane"
+      aria-selected="false" tabindex="-1" data-key="${c.key}">
+      <span class="idea-mark" aria-hidden="true"><svg viewBox="0 0 48 48" fill="none">${IDEA_ICON[c.key] || ""}</svg></span>
+      <span class="idea-name">${esc(c.term.replace(/^The /, ""))}<i lang="el">${c.greek}</i></span>
+    </button>`).join("");
+  const tabs = [...index.querySelectorAll(".idea-tab")];
+  let current = null, swapTimer = null;
+  function show(key, focus) {
+    const c = CULTURE.find(x => x.key === key);
+    if (!c || key === current) return;
+    current = key;
+    tabs.forEach(t => {
+      const on = t.dataset.key === key;
+      t.setAttribute("aria-selected", String(on));
+      t.tabIndex = on ? 0 : -1;
+      if (on && focus) t.focus();
+    });
+    pane.setAttribute("aria-labelledby", "idea-tab-" + key);
+    const fill = () => {
+      pane.innerHTML = `<p class="ip-greek" lang="el">${c.greek}</p><h3 class="ip-term">${esc(c.term)}</h3>
+        <p class="ip-line">${esc(c.oneLiner)}</p><p class="ip-body">${esc(c.body)}</p>
+        <p class="ip-place">${esc(c.place)}, Greece</p>`;
+      pane.classList.remove("is-changing");
+    };
+    clearTimeout(swapTimer);
+    if (REDUCED_MOTION || !pane.innerHTML) fill();
+    else { pane.classList.add("is-changing"); swapTimer = setTimeout(fill, 180); }
+  }
+  index.addEventListener("click", (e) => { const t = e.target.closest(".idea-tab"); if (t) show(t.dataset.key, false); });
+  // arrow keys move along the icons, as in any set of tabs
+  index.addEventListener("keydown", (e) => {
+    const i = tabs.indexOf(document.activeElement);
+    if (i < 0) return;
+    const step = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 }[e.key];
+    let to = null;
+    if (step) to = tabs[(i + step + tabs.length) % tabs.length];
+    else if (e.key === "Home") to = tabs[0];
+    else if (e.key === "End") to = tabs[tabs.length - 1];
+    if (to) { e.preventDefault(); show(to.dataset.key, true); }
+  });
+  show(CULTURE[0].key, false);
+})();
+document.querySelectorAll("[data-follow]").forEach(b => b.addEventListener("click", openFollow));
+
+// the globe's own controls, once it has started; in the list-only fallback there are none
+let GLOBE = null;
+document.querySelectorAll("[data-atlas]").forEach(btn => btn.addEventListener("click", () => {
+  if (!GLOBE) { document.getElementById("fb-grid").scrollIntoView({ behavior: SMOOTH, block: "start" }); return; }
+  GLOBE[btn.dataset.atlas]();
+}));
+
+const appEl = document.getElementById("app");
+const recordEl = document.getElementById("record");
+let coverVisible = true;
+function onPageScroll() {
+  const r = appEl.getBoundingClientRect();
+  coverVisible = r.bottom > 0;
+  document.body.classList.toggle("past-cover", r.bottom < 72);
+  // the thread down the record draws itself as the record is read, lighting each entry it reaches
+  const line = innerHeight * 0.72;
+  const rr = recordEl.getBoundingClientRect();
+  recordEl.style.setProperty("--drawn", REDUCED_MOTION ? 1 : Math.max(0, Math.min(1, (line - rr.top) / rr.height)).toFixed(3));
+  recordEl.querySelectorAll(".rec").forEach(li => li.classList.toggle("is-lit", REDUCED_MOTION || li.getBoundingClientRect().top < line));
+}
+let scrollQueued = false;
+addEventListener("scroll", () => {
+  if (scrollQueued) return;
+  scrollQueued = true;
+  requestAnimationFrame(() => { scrollQueued = false; onPageScroll(); });
+}, { passive: true });
+addEventListener("resize", onPageScroll);
+onPageScroll();
+document.getElementById("scroll-cue").addEventListener("click", () => document.getElementById("chapter").scrollIntoView({ behavior: SMOOTH }));
+document.getElementById("topbar-globe").addEventListener("click", () => scrollTo({ top: 0, behavior: SMOOTH }));
+document.getElementById("topbar-share").addEventListener("click", () =>
+  shareLink(location.origin + location.pathname, "World Culture Salon · Greece, San Francisco Edition 2026"));
 
 if (typeof THREE === "undefined" || !webglAvailable()) {
   showFallback();
@@ -1162,11 +1893,35 @@ if (typeof THREE === "undefined" || !webglAvailable()) {
 function initGlobe() {
 const canvas = document.getElementById("globe-canvas");
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 1000);
+const appBox = document.getElementById("app");
+function viewSize() { return { w: appBox.clientWidth || innerWidth, h: appBox.clientHeight || innerHeight }; }
+let lastFrame = ""; // the frame the camera was last settled for (see onResize)
+const camera = new THREE.PerspectiveCamera(45, viewSize().w / viewSize().h, 0.1, 1000);
 
 // Wide screens sit close so the globe commands the frame; only narrow/portrait
 // viewports pull back, and only as far as fitting the sphere actually requires.
+// Portrait phones and tablets frame the globe from the page's own layout rather than from
+// constants: as large as fits under the title block, its lower edge tucked behind the artist tray
+// (in explore mode, under the way back). Sizes are in CSS pixels of the cover.
+function portraitFrame() {
+  const { w, h } = viewSize();
+  const exploring = document.body.classList.contains("exploring");
+  const label = document.querySelector(".label-block");
+  const trayEl = document.getElementById("tray");
+  const top = exploring ? 66 : label.offsetTop + label.offsetHeight + 12;
+  const trayTop = trayEl.hidden ? h - 40 : trayEl.offsetTop;
+  const bottom = Math.min(h - 8, trayTop + 72);
+  const diameter = Math.max(160, Math.min(w * 0.96, bottom - top));
+  return { r: diameter / 2, cy: top + diameter / 2, h };
+}
+const isPortraitFramed = () => camera.aspect < 0.9 && viewSize().w <= 900;
+// the camera distance at which the globe (with its atmosphere) spans r pixels on a screen h tall
+function distanceForPx(r, h) {
+  const tanHalf = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+  return 2.12 / Math.sin(Math.atan(r * tanHalf / (h / 2)));
+}
 function cameraDistanceForAspect() {
+  if (isPortraitFramed()) { const f = portraitFrame(); return distanceForPx(f.r, f.h); }
   const halfV = THREE.MathUtils.degToRad(camera.fov / 2);
   // tablets in portrait (aspect ~0.62–0.9) pull the camera back further:
   // a wall-to-wall globe under a tall text stack reads as crowding there,
@@ -1195,6 +1950,12 @@ function globeOffsetY() {
 // it on screen; aiming the camera ABOVE the globe is what sinks it toward
 // the bottom-corner actions in portrait
 function lookAboveY() {
+  if (isPortraitFramed()) {
+    // aim above the globe by as much as puts its centre at the frame's centre on screen
+    const f = portraitFrame();
+    const tanHalf = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+    return distanceForPx(f.r, f.h) * ((f.cy - f.h / 2) / (f.h / 2)) * tanHalf;
+  }
   if (camera.aspect >= 0.9) return 0;
   // tablet portrait: the smaller floating globe sinks below the tall text
   // stack; phones keep their tuned sink
@@ -1203,7 +1964,7 @@ function lookAboveY() {
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
-renderer.setSize(innerWidth, innerHeight);
+renderer.setSize(viewSize().w, viewSize().h);
 
 const controls = new THREE.OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
@@ -1646,6 +2407,8 @@ function openListPanel(items, opts) {
   listWrap.hidden = false;
   panel.scrollTop = 0;
   panel.classList.add("open");
+  document.body.classList.add("sheet-open");
+  setArtistParam(null);
   controls.autoRotate = false;
 }
 
@@ -1720,6 +2483,8 @@ function openGroupedPanel(key, eyebrow, title) {
   groupWrap.hidden = false;
   panel.scrollTop = 0;
   panel.classList.add("open");
+  document.body.classList.add("sheet-open");
+  setArtistParam(null);
   controls.autoRotate = false;
 }
 
@@ -1764,6 +2529,9 @@ function openPanel(artist, sprite) {
 
   panel.scrollTop = 0;
   panel.classList.add("open");
+  document.body.classList.add("sheet-open");
+  // the address bar always names the open artist, so copying it shares them
+  setArtistParam(artist.slug);
   controls.autoRotate = false;
 }
 
@@ -1773,6 +2541,8 @@ voteBtn.addEventListener("click", () => {
 
 function closePanel() {
   panel.classList.remove("open");
+  document.body.classList.remove("sheet-open");
+  setArtistParam(null);
   clearActive();
   currentArtist = null;
   controls.autoRotate = !REDUCED_MOTION;
@@ -1783,31 +2553,38 @@ function closePanel() {
 let downX = 0, downY = 0;
 renderer.domElement.addEventListener("pointerdown", (e) => { downX = e.clientX; downY = e.clientY; });
 
+// Lights are a few pixels wide, and on a phone a fingertip is forty: rather than asking a ray to
+// hit a sprite, every light on the near side is placed on the screen and measured against the tap.
+const PICK_PX = IS_TOUCH ? 26 : 14;
+const _p = new THREE.Vector3(), _n = new THREE.Vector3(), _c = new THREE.Vector3(), _toCam = new THREE.Vector3();
+function lightsNear(clientX, clientY, radius) {
+  const r = renderer.domElement.getBoundingClientRect();
+  globe.getWorldPosition(_c);
+  const found = [];
+  markers.forEach(m => {
+    m.getWorldPosition(_p);
+    _n.copy(_p).sub(_c).normalize();
+    _toCam.copy(camera.position).sub(_p).normalize();
+    if (_n.dot(_toCam) < 0.15) return; // the far side, or grazing the rim
+    _p.project(camera);
+    const d = Math.hypot(r.left + (_p.x + 1) / 2 * r.width - clientX, r.top + (1 - _p.y) / 2 * r.height - clientY);
+    if (d <= radius) found.push({ m, d });
+  });
+  return found.sort((a, b) => a.d - b.d);
+}
+
 renderer.domElement.addEventListener("click", (e) => {
   if (Math.hypot(e.clientX - downX, e.clientY - downY) > 6) return;
-  setMouse(e);
-  raycaster.setFromCamera(mouse, camera);
-
-  const hits = raycaster.intersectObjects(markers);
-  if (!hits.length) {
-    // empty space — dismiss whatever panel is open, like the overlays' backdrops do
+  const near = lightsNear(e.clientX, e.clientY, PICK_PX);
+  if (!near.length) {
+    // empty space: dismiss whatever panel is open, like the overlays' backdrops do
     if (panel.classList.contains("open")) closePanel();
     return;
   }
-  // gather every light under the cursor on the near side of the globe
-  // (deeper hits are the same cluster; far-side hits are a whole radius away)
-  const nearest = hits[0].distance;
-  const seen = new Set();
-  const cluster = [];
-  hits.forEach(h => {
-    if (h.distance > nearest + 0.45) return;
-    const a = h.object.userData;
-    if (seen.has(a.index)) return;
-    seen.add(a.index);
-    cluster.push(a);
-  });
-  if (cluster.length === 1) openPanel(cluster[0], hits[0].object);
-  else openListPanel(cluster);
+  // lights almost as close as the nearest one are a cluster: the visitor chooses among them
+  const cluster = near.filter(h => h.d <= near[0].d + (IS_TOUCH ? 14 : 8)).map(h => h.m);
+  if (cluster.length === 1) openPanel(cluster[0].userData, cluster[0]);
+  else openListPanel(cluster.map(m => m.userData));
 });
 
 // clicks that land on page furniture (title copy, hint, mission line…) rather
@@ -1816,15 +2593,13 @@ renderer.domElement.addEventListener("click", (e) => {
 // overlays and their trigger buttons, the culture rail — keep it open
 document.addEventListener("click", (e) => {
   if (!panel.classList.contains("open")) return;
-  if (e.target.closest("#artist-panel, #globe-canvas, .stats, .overlay, .search-btn, .culture-rail")) return;
+  if (e.target.closest("#artist-panel, #globe-canvas, .stats, .overlay, .search-btn, .culture-rail, .tray, [data-atlas], .topbar, #sheet-scrim")) return;
   closePanel();
 });
 
 renderer.domElement.addEventListener("pointermove", (e) => {
-  setMouse(e);
-  raycaster.setFromCamera(mouse, camera);
-  const hovering = raycaster.intersectObjects(markers).length > 0;
-  renderer.domElement.style.cursor = hovering ? "pointer" : "grab";
+  if (e.pointerType !== "mouse") return;
+  renderer.domElement.style.cursor = lightsNear(e.clientX, e.clientY, PICK_PX).length ? "pointer" : "grab";
 });
 
 document.getElementById("panel-close").addEventListener("click", closePanel);
@@ -1840,7 +2615,9 @@ let flight = null;
 function flyToSprite(sprite) {
   const target = controls.target.clone();
   const world = sprite.getWorldPosition(new THREE.Vector3());
-  const dirTo = world.sub(target).normalize();
+  // seen square-on: line the camera up with the light as seen from the globe's centre (on portrait
+  // screens the orbit target sits above the centre, which would leave the light near the rim)
+  const dirTo = world.sub(globe.getWorldPosition(new THREE.Vector3())).normalize();
   const dirFrom = camera.position.clone().sub(target).normalize();
   const dist = camera.position.distanceTo(target);
   if (REDUCED_MOTION) {
@@ -1903,23 +2680,213 @@ window.addEventListener("keydown", (e) => {
   if (e.key === "Escape" && !searchOverlay.hidden) closeSearch();
 });
 
+// ---------- the cover and explore modes ----------
+// On a phone the cover must let the page scroll, so a finger turns the globe only when it moves
+// sideways. "Explore the globe" opens it full screen, where every gesture belongs to the globe.
+const UP = new THREE.Vector3(0, 1, 0);
+let resumeTimer = null;
+function pauseAutoRotate() {
+  controls.autoRotate = false;
+  clearTimeout(resumeTimer);
+  resumeTimer = setTimeout(() => { if (!panel.classList.contains("open")) controls.autoRotate = !REDUCED_MOTION; }, 12000);
+}
+const hintEl = document.getElementById("hint");
+function setExploring(on) {
+  document.body.classList.toggle("exploring", on);
+  controls.enabled = on || !IS_TOUCH;
+  controls.enableZoom = on; // on the cover, the wheel scrolls the page
+  renderer.domElement.style.touchAction = on ? "none" : "pan-y";
+  hintEl.textContent = on
+    ? "Drag to turn · Scroll to zoom · Select a light to meet its artist"
+    : "Drag to turn · Select a light to meet its artist";
+  onResize(true);
+}
+function explore(on) {
+  if (on && scrollY > 0) scrollTo({ top: 0 });
+  setExploring(on);
+}
+setExploring(false);
+document.getElementById("explore-btn").addEventListener("click", () => explore(!document.body.classList.contains("exploring")));
+document.getElementById("explore-exit").addEventListener("click", () => explore(false));
+
+(function coverTurn() {
+  const el = renderer.domElement;
+  let id = null, x0 = 0, y0 = 0, lastX = 0, mode = null;
+  el.addEventListener("pointerdown", (e) => {
+    if (controls.enabled || e.pointerType === "mouse") return;
+    id = e.pointerId; x0 = lastX = e.clientX; y0 = e.clientY; mode = null;
+  });
+  el.addEventListener("pointermove", (e) => {
+    if (e.pointerId !== id || controls.enabled) return;
+    if (!mode) {
+      if (Math.hypot(e.clientX - x0, e.clientY - y0) < 8) return;
+      mode = Math.abs(e.clientX - x0) > Math.abs(e.clientY - y0) ? "turn" : "scroll";
+      if (mode === "turn") { flight = null; pauseAutoRotate(); }
+    }
+    if (mode !== "turn") return;
+    const offset = camera.position.clone().sub(controls.target);
+    offset.applyAxisAngle(UP, -(e.clientX - lastX) * 0.0065);
+    camera.position.copy(controls.target).add(offset);
+    lastX = e.clientX;
+  });
+  const end = (e) => { if (e.pointerId === id) { id = null; mode = null; } };
+  el.addEventListener("pointerup", end);
+  el.addEventListener("pointercancel", end);
+})();
+
+// ---------- meet the artists: a tray of cards that travels the globe ----------
+// Greece first, then eastward all the way round, so swiping is a journey: each card the tray
+// settles on turns the globe to that artist's light and lights their thread home.
+const eastOfAthens = (a) => ((a.lng - 20.5) % 360 + 360) % 360;
+const ORDER = ARTISTS.slice().sort((a, b) =>
+  (b.country === "Greece") - (a.country === "Greece") || eastOfAthens(a) - eastOfAthens(b) || a.index - b.index);
+const spriteOf = new Map(markers.map(m => [m.userData.index, m]));
+const tray = document.getElementById("tray");
+const track = document.getElementById("tray-track");
+track.innerHTML = ORDER.map(a => `
+  <button class="tray-card" type="button" data-i="${a.index}">
+    <span class="tc-loc">${esc(a.location)}</span>
+    <span class="tc-name">${esc(a.name)}</span>
+    <span class="tc-title">${esc(a.title || "Untitled")}</span>
+  </button>`).join("");
+document.getElementById("tray-total").textContent = ORDER.length;
+let trayAt = -1, traySettle = null, trayQuiet = false;
+function markTray(i) {
+  if (i === trayAt) return;
+  if (track.children[trayAt]) track.children[trayAt].classList.remove("is-current");
+  trayAt = i;
+  if (track.children[i]) track.children[i].classList.add("is-current");
+  document.getElementById("tray-pos").textContent = i + 1;
+}
+function trayCentred() {
+  const first = track.firstElementChild;
+  if (!first) return 0;
+  const step = first.offsetWidth + (parseFloat(getComputedStyle(track).columnGap) || 10);
+  const mid = track.scrollLeft + track.clientWidth / 2;
+  return Math.max(0, Math.min(ORDER.length - 1, Math.round((mid - first.offsetLeft - first.offsetWidth / 2) / step)));
+}
+function scrollTrayTo(i, smooth) {
+  const card = track.children[i];
+  if (!card) return;
+  trayQuiet = true; // the tray moving to match the panel should not fly the globe again
+  track.scrollTo({ left: card.offsetLeft - (track.clientWidth - card.offsetWidth) / 2, behavior: smooth && !REDUCED_MOTION ? "smooth" : "auto" });
+  markTray(i);
+  setTimeout(() => { trayQuiet = false; }, 600);
+}
+track.addEventListener("scroll", () => {
+  clearTimeout(traySettle);
+  traySettle = setTimeout(() => {
+    if (trayQuiet) return;
+    const i = trayCentred();
+    if (i === trayAt) return;
+    markTray(i);
+    const s = spriteOf.get(ORDER[i].index);
+    if (s) { spotlightArtist(s); flyToSprite(s); pauseAutoRotate(); }
+  }, 120);
+}, { passive: true });
+track.addEventListener("click", (e) => {
+  const card = e.target.closest(".tray-card");
+  if (!card) return;
+  const a = ARTISTS.find(x => x.index === Number(card.dataset.i));
+  const s = spriteOf.get(a.index);
+  markTray(ORDER.indexOf(a));
+  openPanel(a, s);
+  if (s) flyToSprite(s);
+});
+markTray(0);
+tray.hidden = false;
+onResize(true); // the tray now takes its place, and the portrait frame with it
+
+// ---------- in the panel: previous and next (in the tray's order), and share ----------
+function stepArtist(dir) {
+  if (!currentArtist) return;
+  const i = ORDER.findIndex(a => a.index === currentArtist.index);
+  const a = ORDER[(i + dir + ORDER.length) % ORDER.length];
+  const s = spriteOf.get(a.index);
+  openPanel(a, s);
+  if (s) flyToSprite(s);
+  scrollTrayTo(ORDER.indexOf(a), true);
+}
+document.getElementById("panel-prev").addEventListener("click", () => stepArtist(-1));
+document.getElementById("panel-next").addEventListener("click", () => stepArtist(1));
+document.getElementById("panel-share").addEventListener("click", () => {
+  if (currentArtist) shareLink(artistUrl(currentArtist), currentArtist.name + " · World Culture Salon · Greece, 2026");
+});
+
+// on a phone the panel is a sheet: its scrim and a downward pull on its handle both close it
+document.getElementById("sheet-scrim").addEventListener("click", closePanel);
+(function sheetPull() {
+  const handle = document.getElementById("sheet-handle");
+  let id = null, y0 = 0;
+  handle.addEventListener("pointerdown", (e) => {
+    if (e.target.closest(".panel-close") || !matchMedia("(max-width:700px)").matches) return;
+    id = e.pointerId; y0 = e.clientY;
+    handle.setPointerCapture(id);
+    panel.style.transition = "none";
+  });
+  handle.addEventListener("pointermove", (e) => {
+    if (e.pointerId === id) panel.style.transform = `translateY(${Math.max(0, e.clientY - y0)}px)`;
+  });
+  const up = (e) => {
+    if (e.pointerId !== id) return;
+    id = null;
+    panel.style.transition = "";
+    panel.style.transform = "";
+    if (e.clientY - y0 > 90) closePanel();
+  };
+  handle.addEventListener("pointerup", up);
+  handle.addEventListener("pointercancel", up);
+})();
+
+addEventListener("keydown", (e) => {
+  if (e.key !== "Escape" || !searchOverlay.hidden || !cultureOverlay.hidden || !followOverlay.hidden) return;
+  if (panel.classList.contains("open")) closePanel();
+  else if (document.body.classList.contains("exploring")) explore(false);
+});
+
+// a link to one artist (?artist=name) opens them once the opening has played
+const wanted = BY_SLUG.get(new URLSearchParams(location.search).get("artist") || "");
+if (wanted) setTimeout(() => {
+  const s = spriteOf.get(wanted.index);
+  openPanel(wanted, s);
+  if (s) flyToSprite(s);
+  scrollTrayTo(ORDER.indexOf(wanted), false);
+}, LOADING_MIN_MS + 250);
+
+GLOBE = {
+  all: () => openListPanel(ARTISTS, { eyebrow: "All Artists", title: "Every Light, One by One", subtitle: `${ARTISTS.length} artists — choose one to meet` }),
+  countries: () => openGroupedPanel("country", "Countries", "A World of Answers"),
+  cities: () => openGroupedPanel("location", "Cities", "Where the Light Comes From"),
+  search: () => openSearch(),
+  explore: () => explore(true),
+};
+document.getElementById("tray-all").addEventListener("click", GLOBE.all);
+
 // test hook: exposes internals only when ?debug is present
 if (new URLSearchParams(location.search).has("debug")) {
   window.__wcs = { markers, openPanel, openListPanel, openCultureOverlay, ARTISTS, CULTURE, camera, controls };
 }
 
-window.addEventListener("resize", () => {
-  camera.aspect = innerWidth / innerHeight;
+function onResize(force) {
+  const { w, h } = viewSize();
+  camera.aspect = w / h;
   camera.updateProjectionMatrix();
-  renderer.setSize(innerWidth, innerHeight);
+  renderer.setSize(w, h);
   const d = cameraDistanceForAspect();
   controls.maxDistance = Math.max(9, d + 1.5);
-  if (camera.position.length() < d) camera.position.setLength(d);
+  const seen = camera.position.clone().sub(controls.target);
   globe.position.x = globeOffsetX();
   globe.position.y = globeOffsetY();
   controls.target.x = globe.position.x;
   controls.target.y = globe.position.y + lookAboveY();
-});
+  // a new frame settles the camera at the distance it calls for, seen from the same direction;
+  // a mere repaint of the same size (a phone's address bar) leaves the visitor's zoom alone
+  const frame = w + "x" + h + (document.body.classList.contains("exploring") ? "+" : "");
+  if (force === true || frame !== lastFrame) camera.position.copy(controls.target).add(seen.setLength(d));
+  else if (camera.position.distanceTo(controls.target) < controls.minDistance) camera.position.copy(controls.target).add(seen.setLength(d));
+  lastFrame = frame;
+}
+window.addEventListener("resize", () => onResize());
 
 const sunDirView = new THREE.Vector3();
 const t0 = performance.now();
@@ -1936,6 +2903,7 @@ let rotateFrames = 0, rotateCalibrated = REDUCED_MOTION;
 
 (function animate() {
   requestAnimationFrame(animate);
+  if (shown && !coverVisible && !document.body.classList.contains("exploring")) return;
   const t = (performance.now() - t0) / 1000;
 
   if (!rotateCalibrated) {
