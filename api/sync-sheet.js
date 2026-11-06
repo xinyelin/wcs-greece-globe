@@ -191,7 +191,9 @@ async function logToNotion({ artistCount, pending, committed, subscribers, chang
   if (!NOTION_TOKEN || !NOTION_LOG_PAGE_ID) return false;
   const today = new Date().toISOString().slice(0, 10);
   let subLine;
-  if (subscribers == null) {
+  if (subscribers === "airtable") {
+    subLine = "邮件订阅：见 Airtable · One Culture Foundation · WCS Subscribers";
+  } else if (subscribers == null) {
     subLine = "邮件订阅人数：未知";
   } else if (!subscribers.length) {
     subLine = "邮件订阅人数：0";
@@ -281,7 +283,8 @@ module.exports = async (req, res) => {
     await redis(["SET", "sync:artistCount", String(artists.length)]);
     await redis(["SET", "sync:pending", JSON.stringify(pending)]);
 
-    const subscribers = await redis(["SMEMBERS", "subs"]).catch(() => null);
+    // subscribers live in Airtable (WCS Subscribers) since 2026-11-05, so the log only points there
+    const subscribers = "airtable";
     const notionLogged = await logToNotion({
       artistCount: artists.length,
       pending,

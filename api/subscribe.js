@@ -1,10 +1,7 @@
-// Collects newsletter emails into the same Redis store the votes use.
-// SADD dedupes re-submissions for free; a first-seen timestamp is kept
-// separately so the list can be exported in signup order. Each sign-up is
-// also written to WCS Subscribers in the OCF Airtable base (see
-// _wcs-subscribers.js); if that write fails, Redis still has the address and
-// "copy to Airtable" on results.html brings it across.
-const { upsertSubscribers } = require("./_wcs-subscribers");
+// Newsletter sign-ups ("Follow the chapter"). Each address goes to WCS Subscribers in the OCF
+// Airtable base (see _wcs-subscribers.js), the only place subscribers are kept since 2026-11-05.
+// Redis, the store the votes use, is used here only for a soft per-IP daily cap.
+const { upsertSubscriber } = require("./_wcs-subscribers");
 const REST_URL = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
 const REST_TOKEN = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
 
@@ -22,29 +19,30 @@ module.exports = async (req, res) => {
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
   if (req.method === "OPTIONS") return res.status(204).end();
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
-  if (!REST_URL || !REST_TOKEN) return res.status(503).json({ error: "Subscriptions are not open yet" });
+  if (!process.env.AIRTABLE_OCF_TOKEN) return res.status(503).json({ error: "Subscriptions are not open yet" });
 
   const email = String((req.body && req.body.email) || "").trim().toLowerCase();
   if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
     return res.status(400).json({ error: "Invalid email" });
   }
 
-  try {
-    // soft per-IP daily cap to deter scripted stuffing
-    const ip = (req.headers["x-forwarded-for"] || "").split(",")[0].trim() || "unknown";
-    const capKey = `subcap:${ip}:${new Date().toISOString().slice(0, 10)}`;
-    const used = await redis(["INCR", capKey]);
-    if (used === 1) await redis(["EXPIRE", capKey, "86400"]);
-    if (used > 20) return res.status(429).json({ error: "Too many attempts today" });
-
-    const now = new Date().toISOString();
-    await redis(["SADD", "subs", email]);
-    await redis(["HSETNX", "subs:ts", email, now]);
-    const first = (await redis(["HGET", "subs:ts", email])) || now;
-    const copied = await upsertSubscribers([{ email, first, last: now }]);
-    if (!copied.ok && copied.reason !== "no token") console.error(`subscribe: Airtable write failed (${copied.reason})`);
-    return res.status(200).json({ ok: true });
-  } catch (e) {
-    return res.status(500).json({ error: "Storage error" });
+  // soft per-IP daily cap to deter scripted stuffing; if Redis is down, sign-ups still go through
+  if (REST_URL && REST_TOKEN) {
+    try {
+      const ip = (req.headers["x-forwarded-for"] || "").split(",")[0].trim() || "unknown";
+      const capKey = `subcap:${ip}:${new Date().toISOString().slice(0, 10)}`;
+      const used = await redis(["INCR", capKey]);
+      if (used === 1) await redis(["EXPIRE", capKey, "86400"]);
+      if (used > 20) return res.status(429).json({ error: "Too many attempts today" });
+    } catch (e) {
+      // no cap this time
+    }
   }
+
+  const saved = await upsertSubscriber(email);
+  if (!saved.ok) {
+    console.error(`subscribe: Airtable write failed (${saved.reason})`);
+    return res.status(502).json({ error: "Storage error" });
+  }
+  return res.status(200).json({ ok: true });
 };

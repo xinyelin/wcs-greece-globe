@@ -72,9 +72,9 @@ async function load() {
       html += `<tr><td class="rank">${i + 1}</td><td>${a.name}<span class="loc">${a.location}</span></td><td>${a.title}</td><td class="votes">${a.n}</td></tr>`;
     });
     html += "</table>";
-    html += `<div class="total" style="margin-top:48px"><b>${subscribers.length}</b>newsletter subscribers`;
-    if (subscribers.length) html += ' · <a href="#" id="copy-subs" style="color:var(--gold)">copy all</a> · <a href="#" id="to-airtable" style="color:var(--gold)">copy to Airtable (WCS Subscribers)</a>';
-    html += "</div>";
+    html += '<div class="total" style="margin-top:48px">Newsletter subscribers are kept in Airtable: One Culture Foundation → <a href="https://airtable.com/appZvVV7zU2q7r303/tbl7vzAVUDaZ2puHw" target="_blank" rel="noopener" style="color:var(--gold)">WCS Subscribers</a>.</div>';
+    // what is left of the gallery's earlier list, to remove until it is empty
+    if (subscribers.length) html += `<div class="total" style="margin-top:18px"><b>${subscribers.length}</b>addresses still in the gallery's earlier list (already copied to Airtable) · <a href="#" id="copy-subs" style="color:var(--gold)">copy all</a></div>`;
     if (subscribers.length) {
       html += '<table><tr><th></th><th>Email</th><th style="text-align:right">Joined</th><th></th></tr>';
       subscribers.forEach((s, i) => {
@@ -90,23 +90,6 @@ async function load() {
       e.preventDefault();
       navigator.clipboard.writeText(subscribers.map(s => s.email).join("\n"));
       copyBtn.textContent = "copied ✓";
-    });
-    // every address, with the date it first signed up, into Airtable; safe to run again
-    const airBtn = document.getElementById("to-airtable");
-    if (airBtn) airBtn.addEventListener("click", async (e) => {
-      e.preventDefault();
-      airBtn.textContent = "copying…";
-      try {
-        const r = await fetch("/api/results", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ key, action: "copy_subs" }),
-        });
-        const d = await r.json().catch(() => ({}));
-        airBtn.textContent = r.ok ? `copied ${d.copied} of ${d.total} to Airtable ✓` : `failed (${d.error || r.status})`;
-      } catch (err) {
-        airBtn.textContent = "failed — try again";
-      }
     });
     out.querySelectorAll(".remove-sub").forEach(link => {
       link.addEventListener("click", async (e) => {

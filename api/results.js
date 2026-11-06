@@ -1,4 +1,6 @@
-const { upsertSubscribers } = require("./_wcs-subscribers");
+// Voting results for organizers, behind the admin key. Subscribers are kept in Airtable (WCS
+// Subscribers) since 2026-11-05; "subscribers" here is only what is left of the gallery's earlier
+// list in Redis, shown so it can be removed (action=remove_sub) until it is empty.
 const REST_URL = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
 const REST_TOKEN = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
 
@@ -40,23 +42,6 @@ module.exports = async (req, res) => {
       await redis(["SREM", "subs", email]);
       await redis(["HDEL", "subs:ts", email]);
       return res.status(200).json({ ok: true, removed: email });
-    } catch (e) {
-      return res.status(500).json({ error: "Storage error" });
-    }
-  }
-
-  // POST + action=copy_subs copies every address, with the time it first signed up, into WCS
-  // Subscribers in the OCF Airtable base (an upsert, so running it again changes nothing). New
-  // sign-ups go there as they happen; this brings in the earlier ones, or any write that failed.
-  if (req.method === "POST" && req.body && req.body.action === "copy_subs") {
-    try {
-      const emails = (await redis(["SMEMBERS", "subs"])) || [];
-      const tsFlat = (await redis(["HGETALL", "subs:ts"])) || [];
-      const first = {};
-      for (let i = 0; i + 1 < tsFlat.length; i += 2) first[tsFlat[i]] = tsFlat[i + 1];
-      const copied = await upsertSubscribers(emails.map((email) => ({ email, first: first[email] })));
-      if (!copied.ok) return res.status(502).json({ error: `Airtable: ${copied.reason}`, copied: copied.written, total: emails.length });
-      return res.status(200).json({ ok: true, copied: copied.written, total: emails.length });
     } catch (e) {
       return res.status(500).json({ error: "Storage error" });
     }
