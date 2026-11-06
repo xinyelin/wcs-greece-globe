@@ -73,7 +73,7 @@ async function load() {
     });
     html += "</table>";
     html += `<div class="total" style="margin-top:48px"><b>${subscribers.length}</b>newsletter subscribers`;
-    if (subscribers.length) html += ' · <a href="#" id="copy-subs" style="color:var(--gold)">copy all</a>';
+    if (subscribers.length) html += ' · <a href="#" id="copy-subs" style="color:var(--gold)">copy all</a> · <a href="#" id="to-airtable" style="color:var(--gold)">copy to Airtable (WCS Subscribers)</a>';
     html += "</div>";
     if (subscribers.length) {
       html += '<table><tr><th></th><th>Email</th><th style="text-align:right">Joined</th><th></th></tr>';
@@ -90,6 +90,23 @@ async function load() {
       e.preventDefault();
       navigator.clipboard.writeText(subscribers.map(s => s.email).join("\n"));
       copyBtn.textContent = "copied ✓";
+    });
+    // every address, with the date it first signed up, into Airtable; safe to run again
+    const airBtn = document.getElementById("to-airtable");
+    if (airBtn) airBtn.addEventListener("click", async (e) => {
+      e.preventDefault();
+      airBtn.textContent = "copying…";
+      try {
+        const r = await fetch("/api/results", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ key, action: "copy_subs" }),
+        });
+        const d = await r.json().catch(() => ({}));
+        airBtn.textContent = r.ok ? `copied ${d.copied} of ${d.total} to Airtable ✓` : `failed (${d.error || r.status})`;
+      } catch (err) {
+        airBtn.textContent = "failed — try again";
+      }
     });
     out.querySelectorAll(".remove-sub").forEach(link => {
       link.addEventListener("click", async (e) => {

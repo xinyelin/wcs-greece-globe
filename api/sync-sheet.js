@@ -10,7 +10,6 @@
 const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
-const { upsertSubscribers } = require("./_wcs-subscribers");
 
 const SHEET_ID = process.env.GOOGLE_SHEET_ID;
 const SA_EMAIL = process.env.GOOGLE_SA_EMAIL;
@@ -283,14 +282,6 @@ module.exports = async (req, res) => {
     await redis(["SET", "sync:pending", JSON.stringify(pending)]);
 
     const subscribers = await redis(["SMEMBERS", "subs"]).catch(() => null);
-    // every address also lands in WCS Subscribers (Airtable), with the date it first signed up
-    let subscribersCopied = null;
-    if (subscribers && subscribers.length) {
-      const firstSeen = (await redis(["HGETALL", "subs:ts"]).catch(() => null)) || [];
-      const first = {};
-      for (let i = 0; i + 1 < firstSeen.length; i += 2) first[firstSeen[i]] = firstSeen[i + 1];
-      subscribersCopied = await upsertSubscribers(subscribers.map((email) => ({ email, first: first[email] })));
-    }
     const notionLogged = await logToNotion({
       artistCount: artists.length,
       pending,
@@ -307,7 +298,6 @@ module.exports = async (req, res) => {
       changedPaths: publish.changedPaths,
       commitSha: publish.commitSha || null,
       notionLogged,
-      subscribersCopied,
     });
   } catch (e) {
     return res.status(500).json({ error: String((e && e.message) || e) });

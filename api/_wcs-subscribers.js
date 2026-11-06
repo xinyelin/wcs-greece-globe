@@ -1,10 +1,10 @@
 /*
  * WCS Subscribers, in the One Culture Foundation Airtable base: one record per address that asked
  * for World Culture Salon news through the gallery's Subscribe ("Follow the chapter"). Shared by
- * api/subscribe.js (each sign-up as it happens) and api/sync-sheet.js (the weekly copy of every
- * address in Redis, so the table catches up on its own if a write ever failed, and so people who
- * subscribed before the table existed are in it too). Vercel does not route files whose names
- * begin with "_", so this is a module, not an endpoint.
+ * api/subscribe.js (each sign-up as it happens, like the OCF website forms) and api/results.js
+ * (the organizers' "copy to Airtable" on results.html, which copies every address in Redis: the
+ * people who subscribed before this table existed, or any write that failed). Vercel does not
+ * route files whose names begin with "_", so this is a module, not an endpoint.
  *
  * Records are upserted on Email Key (the lowercased address), so a repeat sign-up updates the one
  * record instead of adding another. The site writes Email, Email Key, First Signed Up, Source and,

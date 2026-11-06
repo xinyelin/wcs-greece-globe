@@ -3,7 +3,7 @@
 // separately so the list can be exported in signup order. Each sign-up is
 // also written to WCS Subscribers in the OCF Airtable base (see
 // _wcs-subscribers.js); if that write fails, Redis still has the address and
-// the weekly sync copies it across.
+// "copy to Airtable" on results.html brings it across.
 const { upsertSubscribers } = require("./_wcs-subscribers");
 const REST_URL = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
 const REST_TOKEN = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
