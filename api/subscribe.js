@@ -1,6 +1,10 @@
 // Collects newsletter emails into the same Redis store the votes use.
 // SADD dedupes re-submissions for free; a first-seen timestamp is kept
-// separately so the list can be exported in signup order.
+// separately so the list can be exported in signup order. Each sign-up is
+// also written to WCS Subscribers in the OCF Airtable base (see
+// _wcs-subscribers.js); if that write fails, Redis still has the address and
+// the weekly sync copies it across.
+const { upsertSubscribers } = require("./_wcs-subscribers");
 const REST_URL = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
 const REST_TOKEN = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
 
@@ -33,8 +37,12 @@ module.exports = async (req, res) => {
     if (used === 1) await redis(["EXPIRE", capKey, "86400"]);
     if (used > 20) return res.status(429).json({ error: "Too many attempts today" });
 
+    const now = new Date().toISOString();
     await redis(["SADD", "subs", email]);
-    await redis(["HSETNX", "subs:ts", email, new Date().toISOString()]);
+    await redis(["HSETNX", "subs:ts", email, now]);
+    const first = (await redis(["HGET", "subs:ts", email])) || now;
+    const copied = await upsertSubscribers([{ email, first, last: now }]);
+    if (!copied.ok && copied.reason !== "no token") console.error(`subscribe: Airtable write failed (${copied.reason})`);
     return res.status(200).json({ ok: true });
   } catch (e) {
     return res.status(500).json({ error: "Storage error" });
